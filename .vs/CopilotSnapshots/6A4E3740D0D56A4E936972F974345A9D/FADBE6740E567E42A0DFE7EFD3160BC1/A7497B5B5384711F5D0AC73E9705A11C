@@ -1,0 +1,725 @@
+﻿INCLUDE Irvine32.inc
+
+; ==================== DATA SECTION ====================
+.data
+; Game Constants
+SCREEN_WIDTH = 120
+SCREEN_HEIGHT = 30
+GROUND_LEVEL = 25
+GRAVITY = 1                ; positive gravity accelerates downward
+JUMP_STRENGTH = 4           ; upward impulse (negative velocity)
+HIGH_JUMP_STRENGTH = 6      ; stronger upward impulse
+
+; Colors (foreground + background*16)
+DEFAULT_ATTR = white + (blue * 16)
+BLUE_MARIO = blue + (black * 16)
+
+; Game State
+gameActive BYTE 1
+score DWORD 0
+coins BYTE 0
+lives BYTE 3
+level BYTE 1
+timeLeft DWORD 400
+worldStr BYTE "1-1",0
+
+; Timer control
+timerCounter BYTE 0
+
+; Player
+marioX BYTE 10
+marioY BYTE GROUND_LEVEL
+marioPrevY BYTE GROUND_LEVEL
+marioVelocityY SBYTE 0      ; signed: negative = up, positive = down
+isJumping BYTE 0            ; 1 when in air (ascending or descending)
+canDoubleJump BYTE 1
+jumpCount BYTE 0
+marioState BYTE 0
+hasSpringPower BYTE 0
+springTimer BYTE 0
+
+; Power-ups
+springMushroomX BYTE 30
+springMushroomY BYTE GROUND_LEVEL - 1
+springActive BYTE 1
+
+; Coins
+coinCount = 9
+coinX BYTE 20, 35, 50, 16, 18, 65, 75, 90, 100
+coinY BYTE GROUND_LEVEL - 2, GROUND_LEVEL - 3, GROUND_LEVEL - 2, GROUND_LEVEL - 6, GROUND_LEVEL - 7, GROUND_LEVEL - 4, GROUND_LEVEL - 5, GROUND_LEVEL - 6, GROUND_LEVEL - 3
+coinActive BYTE 1, 1, 1, 1, 1, 1, 1, 1, 1
+
+; Enemies
+goomba1X BYTE 45
+goomba1Y BYTE GROUND_LEVEL
+goomba1Dir SBYTE 1
+goomba1Active BYTE 1
+
+; Platforms
+platformCount = 3
+platformX BYTE 15, 40, 70
+platformY BYTE GROUND_LEVEL - 5, GROUND_LEVEL - 8, GROUND_LEVEL - 4
+platformWidth BYTE 8, 10, 6
+
+; Walls
+wallCount = 3
+wallX BYTE 25, 55, 80
+wallYTop BYTE GROUND_LEVEL - 6, GROUND_LEVEL - 8, GROUND_LEVEL - 5
+wallYBottom BYTE GROUND_LEVEL, GROUND_LEVEL - 2, GROUND_LEVEL
+
+; Strings
+strTitle BYTE "SUPER MARIO BROS - 0525",0
+strScore BYTE "SCORE",0
+strCoins BYTE "COINS",0
+strWorld BYTE "WORLD",0
+strTime BYTE "TIME",0
+strLife BYTE "LIFE",0
+strGameOver BYTE "GAME OVER",0
+strLevelComplete BYTE "LEVEL COMPLETE!",0
+strPressAnyKey BYTE "PRESS ANY KEY TO START",0
+
+; Ground
+ground BYTE "------------------------------------------------------------------------------------------------------------------------",0
+
+; ==================== CODE SECTION ====================
+.code
+
+main PROC
+    call Randomize
+    call DrawTitleScreen
+
+mainLoop:
+    call Clrscr
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+
+    call HandleInput
+    call UpdateGame
+    call CheckCollisions
+
+    call DrawUI
+    call DrawLevel
+    call DrawPlayer
+    call DrawEnemies
+    call DrawPowerUps
+    call DrawCoins
+
+    mov eax, 30
+    call Delay
+
+    cmp gameActive, 1
+    je mainLoop
+    call ShowGameOver
+    exit
+main ENDP
+
+DrawTitleScreen PROC
+    call Clrscr
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    mov dl, 50
+    mov dh, 5
+    call Gotoxy
+    mov edx, OFFSET strTitle
+    call WriteString
+    mov dl, 0
+    mov dh, GROUND_LEVEL + 2
+    call Gotoxy
+    mov edx, OFFSET ground
+    call WriteString
+    mov dl, 55
+    mov dh, GROUND_LEVEL
+    call Gotoxy
+    mov eax, BLUE_MARIO
+    call SetTextColor
+    mov al, 'M'
+    call WriteChar
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    mov dl, 48
+    mov dh, 20
+    call Gotoxy
+    mov edx, OFFSET strPressAnyKey
+    call WriteString
+    call ReadChar
+    ret
+DrawTitleScreen ENDP
+
+DrawUI PROC
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    mov dl,5
+    mov dh,1
+    call Gotoxy
+    mov edx,OFFSET strScore
+    call WriteString
+    mov dl,5
+    mov dh,2
+    call Gotoxy
+    mov eax,score
+    call WriteDec
+    mov dl,20
+    mov dh,1
+    call Gotoxy
+    mov edx,OFFSET strCoins
+    call WriteString
+    mov dl,20
+    mov dh,2
+    call Gotoxy
+    movzx eax,coins
+    call WriteDec
+    mov dl,35
+    mov dh,1
+    call Gotoxy
+    mov edx,OFFSET strWorld
+    call WriteString
+    mov dl,35
+    mov dh,2
+    call Gotoxy
+    mov edx,OFFSET worldStr
+    call WriteString
+    mov dl,50
+    mov dh,1
+    call Gotoxy
+    mov edx,OFFSET strTime
+    call WriteString
+    mov dl,50
+    mov dh,2
+    call Gotoxy
+    mov eax,timeLeft
+    call WriteDec
+    mov dl,65
+    mov dh,1
+    call Gotoxy
+    mov edx,OFFSET strLife
+    call WriteString
+    mov dl,65
+    mov dh,2
+    call Gotoxy
+    movzx eax,lives
+    call WriteDec
+    mov dl,0
+    mov dh,GROUND_LEVEL
+    call Gotoxy
+    mov edx,OFFSET ground
+    call WriteString
+    ret
+DrawUI ENDP
+
+DrawLevel PROC
+    mov edi,0
+plLoop:
+    cmp edi,platformCount
+    jge plDone
+    mov dl,platformX[edi]
+    mov dh,platformY[edi]
+    call Gotoxy
+    movzx ecx,platformWidth[edi]
+    mov al,'='
+plInner:
+    call WriteChar
+    loop plInner
+    inc edi
+    jmp plLoop
+plDone:
+    mov ecx,wallCount
+    mov esi,0
+wallLoop:
+    cmp ecx,0
+    je wallsDone
+    mov al,wallYBottom[esi]
+    sub al,wallYTop[esi]
+    inc al
+    mov bl,wallYTop[esi]
+    push ecx
+    movzx ecx,al
+wallDrawVert:
+    mov dl,wallX[esi]
+    mov dh,bl
+    call Gotoxy
+    mov al,'#'
+    call WriteChar
+    inc bl
+    loop wallDrawVert
+    pop ecx
+    inc esi
+    dec ecx
+    jmp wallLoop
+wallsDone:
+    ret
+DrawLevel ENDP
+
+DrawPlayer PROC
+    mov dl,marioX
+    mov dh,marioY
+    call Gotoxy
+    mov eax,BLUE_MARIO
+    call SetTextColor
+    mov al,'M'
+    cmp hasSpringPower,1
+    jne normalP
+    mov al,'S'
+normalP:
+    call WriteChar
+    mov eax,DEFAULT_ATTR
+    call SetTextColor
+    ret
+DrawPlayer ENDP
+
+DrawEnemies PROC
+    cmp goomba1Active,1
+    jne skipG
+    mov dl,goomba1X
+    mov dh,goomba1Y
+    call Gotoxy
+    mov al,'G'
+    call WriteChar
+skipG:
+    ret
+DrawEnemies ENDP
+
+DrawPowerUps PROC
+    cmp springActive,1
+    jne skipSpr
+    mov dl,springMushroomX
+    mov dh,springMushroomY
+    call Gotoxy
+    mov eax,green + (black * 16)
+    call SetTextColor
+    mov al,'!'
+    call WriteChar
+    mov eax,DEFAULT_ATTR
+    call SetTextColor
+skipSpr:
+    ret
+DrawPowerUps ENDP
+
+DrawCoins PROC
+    mov ecx,coinCount
+    mov esi,0
+coinLoop:
+    cmp ecx,0
+    je coinDone
+    mov al,coinActive[esi]
+    cmp al,1
+    jne coinSkip
+    mov dl,coinX[esi]
+    mov dh,coinY[esi]
+    call Gotoxy
+    mov eax,yellow + (blue * 16)
+    call SetTextColor
+    mov al,'O'
+    call WriteChar
+    mov eax,DEFAULT_ATTR
+    call SetTextColor
+coinSkip:
+    inc esi
+    dec ecx
+    jmp coinLoop
+coinDone:
+    ret
+DrawCoins ENDP
+
+UpdateGame PROC
+    call UpdatePlayerPhysics
+    call UpdateEnemies
+    inc timerCounter
+    cmp timerCounter,10
+    jl timerSkip
+    mov timerCounter,0
+    dec timeLeft
+    cmp timeLeft,0
+    jg timerSkip
+    call PlayerDie
+
+timerSkip:
+    cmp hasSpringPower,1
+    jne noSpring
+    dec springTimer
+    cmp springTimer,0
+    jg noSpring
+    mov hasSpringPower,0
+noSpring:
+    ret
+UpdateGame ENDP
+
+UpdatePlayerPhysics PROC
+    mov al,marioY
+    mov marioPrevY,al
+
+    cmp isJumping,1
+    jne checkGround
+    ; in air: apply velocity
+    movsx ax,marioVelocityY
+    mov bl,marioY
+    add bl,al          ; velocity added (negative moves up)
+    mov marioY,bl
+    ; apply gravity
+    mov al,marioVelocityY
+    add al,GRAVITY
+    mov marioVelocityY,al
+    ; landing check
+    mov al,marioY
+    cmp al,GROUND_LEVEL
+    jl airborneDone    ; still above ground
+    ; landed
+    mov marioY,GROUND_LEVEL
+    mov isJumping,0
+    mov marioVelocityY,0
+    mov jumpCount,0
+    mov canDoubleJump,1
+    jmp boundaries
+airborneDone:
+    jmp boundaries
+
+checkGround:
+    ; if below ground (shouldn't) clamp; if above ground (jumped/fell) start falling
+    mov al,marioY
+    cmp al,GROUND_LEVEL
+    jl startFall
+    cmp al,GROUND_LEVEL
+    jg clampGround
+    jmp boundaries
+startFall:
+    mov isJumping,1
+    ; ensure downward velocity starts if zero
+    cmp marioVelocityY,0
+    jge boundaries
+    jmp boundaries
+clampGround:
+    mov marioY,GROUND_LEVEL
+    jmp boundaries
+
+boundaries:
+    cmp marioX,2
+    jg bx1
+    mov marioX,2
+bx1:
+    cmp marioX,SCREEN_WIDTH - 3
+    jl bx2
+    mov marioX,SCREEN_WIDTH - 3
+bx2:
+    ret
+UpdatePlayerPhysics ENDP
+
+UpdateEnemies PROC
+    cmp goomba1Active,1
+    jne updEEnd
+    mov al,goomba1Dir
+    add goomba1X,al
+    cmp goomba1X,30
+    jle eDir
+    cmp goomba1X,70
+    jge eDir
+    jmp updEEnd
+ eDir:
+    mov al,goomba1Dir
+    neg al
+    mov goomba1Dir,al
+updEEnd:
+    ret
+UpdateEnemies ENDP
+
+CheckCollisions PROC
+    call CheckCoinCollisions
+    call CheckPowerUpCollisions
+    call CheckEnemyCollisions
+    call CheckPlatformCollisions
+    call CheckWallCollisions
+    ret
+CheckCollisions ENDP
+
+CheckCoinCollisions PROC
+    mov ecx,coinCount
+    mov esi,0
+ccLoop:
+    cmp ecx,0
+    je ccDone
+    mov al,coinActive[esi]
+    cmp al,1
+    jne ccSkip
+    mov al,marioX
+    sub al,coinX[esi]
+    cmp al,1
+    jg ccSkip
+    cmp al,-1
+    jl ccSkip
+    mov al,marioY
+    sub al,coinY[esi]
+    cmp al,1
+    jg ccSkip
+    cmp al,-1
+    jl ccSkip
+    mov coinActive[esi],0
+    inc coins
+    add score,200
+    call PlayCoinSound
+ccSkip:
+    inc esi
+    dec ecx
+    jmp ccLoop
+ccDone:
+    ret
+CheckCoinCollisions ENDP
+
+CheckPowerUpCollisions PROC
+    cmp springActive,1
+    jne pSkip
+    mov al,marioX
+    sub al,springMushroomX
+    cmp al,1
+    jg pSkip
+    cmp al,-1
+    jl pSkip
+    mov al,marioY
+    sub al,springMushroomY
+    cmp al,1
+    jg pSkip
+    cmp al,-1
+    jl pSkip
+    mov springActive,0
+    mov hasSpringPower,1
+    mov springTimer,100
+    add score,1000
+    call PlayPowerUpSound
+pSkip:
+    ret
+CheckPowerUpCollisions ENDP
+
+CheckEnemyCollisions PROC
+    cmp goomba1Active,1
+    jne eColSkip
+    mov al,marioX
+    sub al,goomba1X
+    cmp al,1
+    jg eColSkip
+    cmp al,-1
+    jl eColSkip
+    mov al,marioY
+    sub al,goomba1Y
+    cmp al,1
+    jg eColSkip
+    cmp al,-1
+    jl eColSkip
+    call PlayerDie
+eColSkip:
+    ret
+CheckEnemyCollisions ENDP
+
+CheckPlatformCollisions PROC
+    mov ecx,platformCount
+    mov esi,0
+platColLoop:
+    cmp ecx,0
+    je platColDone
+    mov al,marioX
+    cmp al,platformX[esi]
+    jb nextPlat
+    mov bl,platformX[esi]
+    add bl,platformWidth[esi]
+    cmp al,bl
+    jae nextPlat
+    ; crossing: previous above, current at or below
+    mov al,marioPrevY
+    cmp al,platformY[esi]
+    jb wasAbovePlat
+    jmp nextPlat
+wasAbovePlat:
+    mov al,marioY
+    cmp al,platformY[esi]
+    jb nextPlat
+    ; land
+    mov al,platformY[esi]
+    mov marioY,al
+    mov isJumping,0
+    mov marioVelocityY,0
+    mov jumpCount,0
+    mov canDoubleJump,1
+    jmp platColDone
+nextPlat:
+    inc esi
+    dec ecx
+    jmp platColLoop
+platColDone:
+    ret
+CheckPlatformCollisions ENDP
+
+CheckWallCollisions PROC
+    mov ecx,wallCount
+    mov esi,0
+wallColLoop:
+    cmp ecx,0
+    je wallColDone
+    mov al,marioX
+    cmp al,wallX[esi]
+    jne wNext
+    mov bl,marioY
+    mov dl,wallYTop[esi]
+    cmp bl,dl
+    jbe wNext          ; above or at top => pass
+    mov dl,wallYBottom[esi]
+    cmp bl,dl
+    ja wNext           ; below bottom => pass
+    mov al,wallX[esi]
+    dec al
+    mov marioX,al
+wNext:
+    inc esi
+    dec ecx
+    jmp wallColLoop
+wallColDone:
+    ret
+CheckWallCollisions ENDP
+
+HandleInput PROC
+    ; process all pending keys each frame for multi-key responsiveness
+inputLoop:
+    call ReadKey
+    jz inputDone
+    cmp al,0
+    jne asciiKey
+    ; extended
+    cmp ah,4Bh
+    je leftKey
+    cmp ah,4Dh
+    je rightKey
+    cmp ah,48h
+    je jumpKey
+    jmp inputLoop
+asciiKey:
+    mov bl,al
+    cmp bl,'A'
+    jb asciiLowerReady
+    cmp bl,'Z'
+    ja asciiLowerReady
+    or bl,20h
+asciiLowerReady:
+    cmp bl,'x'
+    je exitGame
+    cmp bl,'a'
+    je leftKey
+    cmp bl,'d'
+    je rightKey
+    cmp bl,'w'
+    je jumpKey
+    cmp bl,' '
+    je doubleJumpKey
+    jmp inputLoop
+leftKey:
+    dec marioX
+    jmp inputLoop
+rightKey:
+    inc marioX
+    jmp inputLoop
+jumpKey:
+    cmp isJumping,1
+    je inputLoop
+    mov isJumping,1
+    mov jumpCount,1
+    mov canDoubleJump,1
+    cmp hasSpringPower,1
+    jne normJump
+    mov marioVelocityY,-HIGH_JUMP_STRENGTH
+    jmp inputLoop
+normJump:
+    mov marioVelocityY,-JUMP_STRENGTH
+    jmp inputLoop
+doubleJumpKey:
+    cmp isJumping,1
+    jne inputLoop
+    cmp canDoubleJump,1
+    jne inputLoop
+    cmp jumpCount,1
+    jne inputLoop
+    mov canDoubleJump,0
+    mov jumpCount,2
+    mov marioVelocityY,-JUMP_STRENGTH
+    jmp inputLoop
+exitGame:
+    mov gameActive,0
+    jmp inputLoop
+inputDone:
+    ret
+HandleInput ENDP
+
+PlayerDie PROC
+    dec lives
+    cmp lives,0
+    jg respawn
+    mov gameActive,0
+    jmp diedDone
+respawn:
+    mov marioX,10
+    mov marioY,GROUND_LEVEL
+    mov marioPrevY,GROUND_LEVEL
+    mov isJumping,0
+    mov marioVelocityY,0
+    mov jumpCount,0
+    mov canDoubleJump,1
+    mov ecx,coinCount
+    mov esi,0
+resetCoins:
+    cmp ecx,0
+    je coinsDone
+    mov coinActive[esi],1
+    inc esi
+    dec ecx
+    jmp resetCoins
+coinsDone:
+    mov coins,0
+diedDone:
+    ret
+PlayerDie ENDP
+
+PlayJumpSound PROC
+    mov eax,100
+    call Delay
+    ret
+PlayJumpSound ENDP
+PlayDoubleJumpSound PROC
+    mov eax,80
+    call Delay
+    mov eax,120
+    call Delay
+    ret
+PlayDoubleJumpSound ENDP
+PlayCoinSound PROC
+    mov eax,50
+    call Delay
+    ret
+PlayCoinSound ENDP
+PlayPowerUpSound PROC
+    mov eax,60
+    call Delay
+    mov eax,80
+    call Delay
+    mov eax,100
+    call Delay
+    ret
+PlayPowerUpSound ENDP
+
+ShowGameOver PROC
+    call Clrscr
+    mov eax,DEFAULT_ATTR
+    call SetTextColor
+    mov dl,55
+    mov dh,15
+    call Gotoxy
+    mov edx,OFFSET strGameOver
+    call WriteString
+    mov dl,50
+    mov dh,17
+    call Gotoxy
+    mov eax,score
+    call WriteDec
+    mov dl,60
+    mov dh,17
+    call Gotoxy
+    mov edx,OFFSET strScore
+    call WriteString
+    mov eax,3000
+    call Delay
+    ret
+ShowGameOver ENDP
+
+END main
