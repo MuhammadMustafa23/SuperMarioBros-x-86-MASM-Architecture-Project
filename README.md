@@ -74,3 +74,5 @@ Project Structure
 ## How to Run
 
 1. Assemble with MASM:
+2. Link with Irvine32:
+3. Run `Source.exe`
