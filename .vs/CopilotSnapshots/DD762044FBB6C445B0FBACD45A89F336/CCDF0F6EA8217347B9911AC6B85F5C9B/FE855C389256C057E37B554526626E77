@@ -1,0 +1,305 @@
+﻿# Hidden Bonus Room Feature
+
+## Overview
+Added a secret bonus room in Level 1 with a 10-second time limit, black background, and special coins.
+
+---
+
+## ✨ Features Added
+
+### 1. **Hidden Portal Entry**
+- **Location**: Level 1 at coordinates (90, GROUND_LEVEL - 8)
+- **Visual**: Yellow `?` symbol on light blue background
+- **Trigger**: Walk close to the portal (within 2 units)
+- **One-time**: Portal disappears after first use
+
+### 2. **Bonus Room Environment**
+- **Background**: Black screen (different from main game)
+- **UI Color**: Yellow text on black background
+- **Duration**: 10-second timer (displayed in UI)
+- **Coins**: 10 special bonus coins scattered across the room
+- **Coin Positions**: Various heights (Y: 5-13 blocks above ground)
+
+### 3. **Bonus Room Timer**
+```
+Timer Display: "BONUS ROOM!  TIME: [seconds]"
+- Starts at 10 seconds
+- Counts down every second
+- Main game timer PAUSED during bonus room
+- Automatic exit when timer reaches 0
+```
+
+### 4. **Auto-Return System**
+- **Return Position**: Saves position before entering
+- **Exit Message**: "BONUS COMPLETE!" (1 second)
+- **Restoration**: Returns to exact entry point
+- **Coin State**: Collected coins stay collected
+- **Level State**: Returns to same screen version
+
+---
+
+## 🎮 How It Works
+
+### Entry Sequence:
+1. Player discovers yellow `?` portal in Level 1
+2. Walk into portal (proximity detection)
+3. **Sound Effect**: Power-up sound plays
+4. Screen clears → Black background
+5. Mario repositioned to start of bonus room
+6. 10-second timer begins
+
+### During Bonus Room:
+- **Black background** throughout
+- **Yellow UI** for visibility
+- **10 collectible coins** worth 200 points each
+- **No enemies** (safe collection time)
+- **Timer countdown** displayed prominently
+- **Main timer paused** (no penalty)
+
+### Exit Sequence:
+1. Timer reaches 0 seconds
+2. "BONUS COMPLETE!" message displays (1 sec)
+3. **Sound Effect**: Level complete sound
+4. Return to exact entry position
+5. Resume normal game with collected coins
+
+---
+
+## 📊 Technical Implementation
+
+### New Variables:
+```assembly
+inBonusRoom BYTE 0                    ; 0=normal, 1=in bonus room
+bonusRoomTimer DWORD 10               ; Countdown timer (seconds)
+bonusRoomTimerCounter BYTE 0          ; Frame counter
+bonusRoomActive BYTE 1                ; Portal availability
+bonusRoomEntryX BYTE 90               ; Portal X position
+bonusRoomEntryY BYTE GROUND_LEVEL - 8 ; Portal Y position
+returnFromBonusX BYTE 90              ; Return position X
+returnFromBonusY BYTE GROUND_LEVEL    ; Return position Y
+
+; 10 bonus room coins
+bonusRoomCoinCount = 10
+bonusRoomCoinX BYTE [positions]
+bonusRoomCoinY BYTE [heights]
+bonusRoomCoinActive BYTE [states]
+```
+
+### New Procedures:
+1. **CheckBonusRoomEntry** - Detects portal collision
+2. **DrawBonusRoomPortal** - Renders `?` symbol
+3. **EnterBonusRoom** - Transitions to bonus room
+4. **ExitBonusRoom** - Returns to main game
+5. **UpdateBonusRoomTimer** - Countdown logic
+
+### Modified Procedures:
+- **DrawUI**: Shows bonus room title + timer
+- **DrawPlayer**: Yellow Mario in bonus room
+- **DrawCoins**: Yellow coins on black background
+- **UpdateGame**: Pauses main timer in bonus room
+- **gameMainLoop**: Black screen clearing
+- **LoadLevel**: Resets bonus room state
+
+---
+
+## 🎨 Visual Design
+
+### Normal Level 1:
+```
+Background: Light Blue
+Portal: Yellow ? on light blue
+```
+
+### Bonus Room:
+```
+Background: Pure Black
+UI: Yellow text
+Mario: Yellow 'M'
+Coins: Yellow 'O'
+Timer: "TIME: 10" → "TIME: 0"
+Title: "BONUS ROOM!"
+```
+
+---
+
+## 🎵 Sound Effects
+
+| Event | Sound |
+|-------|-------|
+| **Portal Entry** | `SOUND_POWERUP` (1200 Hz, long) |
+| **Timer Countdown** | (Silent - visual only) |
+| **Exit Bonus Room** | `SOUND_LEVEL_COMPLETE` (1500 Hz, medium) |
+
+---
+
+## 💰 Rewards
+
+### Bonus Room Benefits:
+- **10 Coins** = +2000 points (200 per coin)
+- **No Risk** = No enemies or hazards
+- **Time Bonus** = Main timer paused (save ~10 seconds)
+- **Extra Challenge** = Speed collection mini-game
+
+### Strategic Value:
+- **High Score**: +2000 points guaranteed
+- **Time Management**: Pause main timer
+- **One-Time Bonus**: Portal disappears after use
+- **Optional**: Can skip if preferred
+
+---
+
+## 🔧 Configuration
+
+### Easy Adjustments:
+```assembly
+; Modify these for different difficulty:
+
+bonusRoomTimer DWORD 10        ; Change to 15 for easier
+bonusRoomCoinCount = 10        ; Increase to 15 for more coins
+bonusRoomEntryX BYTE 90        ; Move portal location
+bonusRoomEntryY BYTE GROUND_LEVEL - 8  ; Change portal height
+```
+
+### Coin Layout:
+```assembly
+; Current spread: X = 20 to 110 (full width)
+; Heights vary: Y = GROUND_LEVEL - 5 to -13
+; Pattern: Scattered for exploration
+```
+
+---
+
+## 🎯 Player Experience
+
+### Discovery:
+- **Subtle placement** at height (not on ground)
+- **Distinct color** (yellow `?` stands out)
+- **Curiosity reward** for exploration
+
+### Challenge:
+- **Time pressure** (10 seconds)
+- **Coin hunting** (scattered layout)
+- **Movement skill** (platforming required)
+
+### Reward:
+- **Immediate points** (+2000)
+- **Time saved** (main timer paused)
+- **Satisfaction** (secret found)
+
+---
+
+## 🐛 Edge Cases Handled
+
+### Portal Mechanics:
+✅ **Can't re-enter** - Portal deactivates after first use
+✅ **Screen persistence** - Works on both Level 1 screens
+✅ **Level reload** - Portal resets when restarting level
+
+### Timer Management:
+✅ **Main timer paused** - No penalty during bonus room
+✅ **Frame-accurate** - 10 frames = 1 second
+✅ **No glitches** - Clean countdown
+
+### Position Saving:
+✅ **Exact return** - Same X, Y coordinates
+✅ **State preserved** - Collected coins stay collected
+✅ **Screen version** - Returns to correct screen
+
+### Visual Consistency:
+✅ **Color switching** - Proper theme for each mode
+✅ **UI updates** - Correct labels displayed
+✅ **Ground line** - Always visible at bottom
+
+---
+
+## 📈 Testing Checklist
+
+- [x] Portal appears in Level 1
+- [x] Collision detection works
+- [x] Entry sound plays
+- [x] Black background displays
+- [x] Yellow theme applied
+- [x] Timer counts down correctly
+- [x] Coins collectible (all 10)
+- [x] Main timer pauses
+- [x] Auto-exit at 0 seconds
+- [x] Exit message shows
+- [x] Return position accurate
+- [x] Exit sound plays
+- [x] Portal doesn't reappear
+- [x] Level reload resets portal
+
+---
+
+## 🎮 How to Find the Bonus Room
+
+**Location Guide:**
+1. Start Level 1
+2. Move right past first platforms
+3. Look for elevated yellow `?` symbol
+4. Jump to reach it (around X=90)
+5. Walk into it to enter!
+
+**Visual Cue:**
+```
+Normal gameplay: Light blue background
+       ↓
+Yellow ? appears at mid-height
+       ↓
+Walk into it → BLACK SCREEN
+       ↓
+"BONUS ROOM!" with countdown timer
+```
+
+---
+
+## 🏆 High Score Strategy
+
+### Optimal Play:
+1. **Collect main coins first** (longer to find)
+2. **Enter bonus room last** (guaranteed points)
+3. **Speed collection** (10 seconds is tight)
+4. **Maximum points** = Main coins + Bonus coins
+
+### Time Management:
+- Main timer pauses during bonus
+- Effective time bonus ≈ 10 seconds saved
+- Time bonus at end = +500 points
+- **Net gain**: +2500 total from bonus room
+
+---
+
+## 🔮 Future Enhancement Ideas
+
+1. **Multiple Portals** - Different bonus rooms per screen
+2. **Difficulty Scaling** - Shorter time in later levels
+3. **Power-ups** - Special items only in bonus room
+4. **Secret Paths** - Hidden exits to skip sections
+5. **Score Multiplier** - 2x points during bonus time
+6. **Coin Patterns** - Spell words or shapes
+7. **Moving Coins** - Extra challenge for skilled players
+8. **Combo System** - Fast collection = bonus multiplier
+
+---
+
+## ✅ Summary
+
+**Added:**
+- Hidden bonus room with 10-second timer
+- Black background theme
+- Yellow visual style
+- Portal entry system
+- 10 collectible coins
+- Auto-exit mechanism
+- Main timer pause
+- Position save/restore
+
+**Result:**
+A rewarding secret area that adds:
+- **Exploration incentive**
+- **Risk-free scoring opportunity**
+- **Time management strategy**
+- **High replayability value**
+
+**Player Benefit:**
++2000 points + time saved = **Major advantage** for finding the secret! 🎉

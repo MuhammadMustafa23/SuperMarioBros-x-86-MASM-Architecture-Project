@@ -1,0 +1,4819 @@
+﻿INCLUDE Irvine32.inc
+
+mWriteString MACRO xPos, yPos, stringVar
+    mov dl, xPos
+    mov dh, yPos
+    call Gotoxy
+    mov edx, OFFSET stringVar
+    call WriteString
+ENDM
+
+mWriteDec MACRO xPos, yPos, value
+    mov dl, xPos
+    mov dh, yPos
+    call Gotoxy
+    mov eax, value
+    call WriteDec
+ENDM
+
+.data
+SCREEN_WIDTH = 120
+SCREEN_HEIGHT = 30
+GROUND_LEVEL = 25
+GRAVITY = 1
+JUMP_STRENGTH = 4
+HIGH_JUMP_STRENGTH = 6
+
+DEFAULT_ATTR = white + (blue * 16)
+Level4_ATTR = white + (black * 16)
+LEVEL1_ATTR = white + (lightBlue * 16)
+PIPE_ATTR = white + (green * 16)
+BRICK_ATTR = white + (brown * 16)
+BOSS_ATTR = white + (red * 16)
+GREEN_MARIO = green + (lightGreen * 16)
+DARKGRAY_ATTR = gray + (lightBlue * 16)
+
+MB_OK = 0
+MB_ICONERROR = 16
+MB_ICONQUESTION = 32
+MB_ICONWARNING = 48
+MB_ICONINFORMATION = 64
+
+MessageBeep PROTO,
+    uType:DWORD
+
+gameActive BYTE 1
+score DWORD 0
+coins BYTE 0
+lives BYTE 3
+level BYTE 1
+screenVersion BYTE 1
+timeLeft DWORD 400
+worldStr BYTE "1-1", 0
+timerCounter BYTE 0
+
+playerName BYTE 50 DUP(0)
+nameLength BYTE 0
+
+marioX BYTE 10
+marioY BYTE GROUND_LEVEL
+marioVelocityY SBYTE 0
+isJumping BYTE 0
+canDoubleJump BYTE 1
+jumpCount BYTE 0
+marioState BYTE 0
+hasSpringPower BYTE 0
+springTimer BYTE 0
+
+springMushroomX BYTE 30
+springMushroomY BYTE GROUND_LEVEL - 1
+springActive BYTE 1
+
+starX BYTE 50
+starY BYTE GROUND_LEVEL - 8
+starActive BYTE 1
+
+inBonusRoom BYTE 0
+bonusRoomTimer DWORD 15
+bonusRoomTimerCounter BYTE 0
+bonusRoomActive BYTE 1
+bonusRoomEntryX BYTE 90
+bonusRoomEntryY BYTE GROUND_LEVEL - 8
+returnFromBonusX BYTE 90
+returnFromBonusY BYTE GROUND_LEVEL
+
+bonusRoomCoinCount = 10
+bonusRoomCoinX BYTE 25, 30, 35, 45, 50, 55, 65, 70, 75, 85
+bonusRoomCoinY BYTE GROUND_LEVEL - 3, GROUND_LEVEL - 7, GROUND_LEVEL - 11, GROUND_LEVEL - 5, GROUND_LEVEL - 9, GROUND_LEVEL - 13, GROUND_LEVEL - 5, GROUND_LEVEL - 9, GROUND_LEVEL - 13, GROUND_LEVEL - 7
+bonusRoomCoinActive BYTE 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+
+bonusRoomPlatformCount = 5
+bonusRoomPlatformX BYTE 20, 40, 60, 80, 50
+bonusRoomPlatformY BYTE GROUND_LEVEL - 5, GROUND_LEVEL - 9, GROUND_LEVEL - 9, GROUND_LEVEL - 5, GROUND_LEVEL - 14
+bonusRoomPlatformWidth BYTE 8, 8, 8, 8, 6
+
+bonusRoomWallCount = 4
+bonusRoomWallX BYTE 23, 43, 63, 83
+bonusRoomWallYTop BYTE GROUND_LEVEL - 8, GROUND_LEVEL - 12, GROUND_LEVEL - 12, GROUND_LEVEL - 8
+bonusRoomWallYBottom BYTE GROUND_LEVEL - 1, GROUND_LEVEL - 1, GROUND_LEVEL - 1, GROUND_LEVEL - 1
+
+bossX BYTE 100
+bossY BYTE GROUND_LEVEL
+bossHealth BYTE 5
+bossActive BYTE 0
+bossDir SBYTE - 1
+bossAttackTimer BYTE 0
+bossAttackCooldown BYTE 30
+bossVulnerable BYTE 0
+bossStunTimer BYTE 0
+bossPhase BYTE 1
+
+projectileCount = 3
+projectileX BYTE 0, 0, 0
+projectileY BYTE 0, 0, 0
+projectileActive BYTE 0, 0, 0
+projectileDir SBYTE 0, 0, 0
+
+coinCount = 15
+coinX BYTE 12, 13, 14, 32, 33, 34, 62, 63, 64, 92, 93, 94, 110, 111, 112
+coinY BYTE GROUND_LEVEL - 3, GROUND_LEVEL - 4, GROUND_LEVEL - 5, GROUND_LEVEL - 2, GROUND_LEVEL - 3, GROUND_LEVEL - 4, GROUND_LEVEL - 3, GROUND_LEVEL - 4, GROUND_LEVEL - 5, GROUND_LEVEL - 3, GROUND_LEVEL - 4, GROUND_LEVEL - 5, GROUND_LEVEL - 2, GROUND_LEVEL - 3, GROUND_LEVEL - 4
+coinActive BYTE 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+
+goomba1X BYTE 45
+goomba1Y BYTE GROUND_LEVEL
+goomba1Dir SBYTE 1
+goomba1Active BYTE 1
+
+goomba2X BYTE 25
+goomba2Y BYTE GROUND_LEVEL
+goomba2Dir SBYTE -1
+goomba2Active BYTE 1
+
+goomba3X BYTE 85
+goomba3Y BYTE GROUND_LEVEL
+goomba3Dir SBYTE 1
+goomba3Active BYTE 1
+
+koopaX BYTE 70
+koopaY BYTE GROUND_LEVEL
+koopaDir SBYTE - 1
+koopaActive BYTE 1
+koopaShell BYTE 0
+shellTimer BYTE 0
+
+platformCount = 6
+platformX BYTE 10, 30, 60, 28, 85, 95
+platformY BYTE GROUND_LEVEL - 5, GROUND_LEVEL - 8, GROUND_LEVEL - 4, GROUND_LEVEL - 10, GROUND_LEVEL - 6, GROUND_LEVEL - 12
+platformWidth BYTE 10, 10, 8, 7, 9, 5
+
+wallCount = 3
+wallX BYTE 25, 55, 80
+wallYTop BYTE GROUND_LEVEL - 6, GROUND_LEVEL - 8, GROUND_LEVEL - 5
+wallYBottom BYTE GROUND_LEVEL, GROUND_LEVEL - 2, GROUND_LEVEL
+
+coinX_L1_S2 BYTE 15, 20, 22, 35, 37, 39, 52, 54, 56, 70, 72, 85, 87, 102, 108
+coinY_L1_S2 BYTE GROUND_LEVEL - 2, GROUND_LEVEL - 6, GROUND_LEVEL - 10, GROUND_LEVEL - 8, GROUND_LEVEL - 10, GROUND_LEVEL - 12, GROUND_LEVEL - 3, GROUND_LEVEL - 5, GROUND_LEVEL - 7, GROUND_LEVEL - 11, GROUND_LEVEL - 13, GROUND_LEVEL - 4, GROUND_LEVEL - 8, GROUND_LEVEL - 6, GROUND_LEVEL - 2
+goomba1X_L1_S2 BYTE 42
+goomba1Y_L1_S2 BYTE GROUND_LEVEL
+goomba2X_L1_S2 BYTE 22
+goomba2Y_L1_S2 BYTE GROUND_LEVEL
+goomba3X_L1_S2 BYTE 95
+goomba3Y_L1_S2 BYTE GROUND_LEVEL
+koopaX_L1_S2 BYTE 78
+koopaY_L1_S2 BYTE GROUND_LEVEL
+platformX_L1_S2 BYTE 12, 35, 50, 38, 68, 90
+platformY_L1_S2 BYTE GROUND_LEVEL - 4, GROUND_LEVEL - 10, GROUND_LEVEL - 6, GROUND_LEVEL - 14, GROUND_LEVEL - 12, GROUND_LEVEL - 8
+platformWidth_L1_S2 BYTE 10, 8, 12, 6, 14, 9
+wallX_L1_S2 BYTE 28, 60, 82
+wallYTop_L1_S2 BYTE GROUND_LEVEL - 5, GROUND_LEVEL - 11, GROUND_LEVEL - 8
+wallYBottom_L1_S2 BYTE GROUND_LEVEL - 1, GROUND_LEVEL - 2, GROUND_LEVEL
+springMushroomX_L1_S2 BYTE 54
+springMushroomY_L1_S2 BYTE GROUND_LEVEL - 6
+
+starX_L1_S2 BYTE 72
+starY_L1_S2 BYTE GROUND_LEVEL - 13
+
+coinX_L1_S3 BYTE 10, 12, 14, 25, 28, 31, 45, 48, 51, 65, 68, 71, 85, 88, 91
+coinY_L1_S3 BYTE GROUND_LEVEL - 15, GROUND_LEVEL - 14, GROUND_LEVEL - 13, GROUND_LEVEL - 7, GROUND_LEVEL - 11, GROUND_LEVEL - 15, GROUND_LEVEL - 4, GROUND_LEVEL - 8, GROUND_LEVEL - 12, GROUND_LEVEL - 6, GROUND_LEVEL - 10, GROUND_LEVEL - 14, GROUND_LEVEL - 5, GROUND_LEVEL - 9, GROUND_LEVEL - 13
+
+goomba1X_L1_S3 BYTE 38
+goomba1Y_L1_S3 BYTE GROUND_LEVEL
+goomba2X_L1_S3 BYTE 18
+goomba2Y_L1_S3 BYTE GROUND_LEVEL
+goomba3X_L1_S3 BYTE 95
+goomba3Y_L1_S3 BYTE GROUND_LEVEL
+koopaX_L1_S3 BYTE 75
+koopaY_L1_S3 BYTE GROUND_LEVEL
+
+platformX_L1_S3 BYTE 8, 24, 44, 30, 60, 82
+platformY_L1_S3 BYTE GROUND_LEVEL - 13, GROUND_LEVEL - 9, GROUND_LEVEL - 6, GROUND_LEVEL - 16, GROUND_LEVEL - 12, GROUND_LEVEL - 15
+platformWidth_L1_S3 BYTE 12, 10, 14, 8, 12, 10
+
+wallX_L1_S3 BYTE 20, 52, 76
+wallYTop_L1_S3 BYTE GROUND_LEVEL - 8, GROUND_LEVEL - 14, GROUND_LEVEL - 11
+wallYBottom_L1_S3 BYTE GROUND_LEVEL - 1, GROUND_LEVEL - 3, GROUND_LEVEL - 2
+
+springMushroomX_L1_S3 BYTE 62
+springMushroomY_L1_S3 BYTE GROUND_LEVEL - 12
+
+starX_L1_S3 BYTE 85
+starY_L1_S3 BYTE GROUND_LEVEL - 14
+
+flagX_L1_S3 BYTE 110
+flagY_L1_S3 BYTE GROUND_LEVEL - 16
+
+coinX_L4 BYTE 20, 25, 30, 35, 40, 50, 55, 60, 70, 75, 80, 85, 90, 95, 100
+coinY_L4 BYTE GROUND_LEVEL - 2, GROUND_LEVEL - 6, GROUND_LEVEL - 10, GROUND_LEVEL - 6, GROUND_LEVEL - 2, GROUND_LEVEL - 8, GROUND_LEVEL - 12, GROUND_LEVEL - 8, GROUND_LEVEL - 5, GROUND_LEVEL - 9, GROUND_LEVEL - 13, GROUND_LEVEL - 9, GROUND_LEVEL - 5, GROUND_LEVEL - 7, GROUND_LEVEL - 3
+platformX_L4 BYTE 5, 25, 50, 35, 70, 90
+platformY_L4 BYTE GROUND_LEVEL - 8, GROUND_LEVEL - 12, GROUND_LEVEL - 10, GROUND_LEVEL - 15, GROUND_LEVEL - 7, GROUND_LEVEL - 13
+platformWidth_L4 BYTE 8, 12, 10, 8, 15, 10
+wallX_L4 BYTE 18, 45, 82
+wallYTop_L4 BYTE GROUND_LEVEL - 10, GROUND_LEVEL - 12, GROUND_LEVEL - 8
+wallYBottom_L4 BYTE GROUND_LEVEL - 3, GROUND_LEVEL - 5, GROUND_LEVEL - 2
+
+starX_L4 BYTE 60
+starY_L4 BYTE GROUND_LEVEL - 10
+
+cloudCount = 5
+cloudX BYTE 10, 35, 60, 85, 100
+cloudY BYTE 8, 6, 7, 5, 9
+cloudStr BYTE " .-~~~-.  ", 0
+
+birdCount = 4
+birdX BYTE 20, 50, 75, 95
+birdY BYTE 4, 3, 5, 4
+birdStr1 BYTE "v", 0
+birdStr2 BYTE "vv", 0
+birdStr3 BYTE " v v", 0
+
+SOUND_JUMP = 800
+SOUND_COIN = 1000
+SOUND_POWERUP = 1200
+SOUND_ENEMY_DEFEAT = 600
+SOUND_BOSS_HIT = 500
+SOUND_LEVEL_COMPLETE = 1500
+SOUND_GAME_OVER = 300
+SOUND_BGM_NOTE1 = 523
+SOUND_BGM_NOTE2 = 659
+SOUND_BGM_NOTE3 = 784
+SOUND_BGM_NOTE4 = 698
+
+DURATION_SHORT = 50
+DURATION_MEDIUM = 100
+DURATION_LONG = 200
+DURATION_BGM_NOTE = 150
+
+soundEnabled BYTE 1
+bgmEnabled BYTE 1
+bgmCounter BYTE 0
+
+strTitle BYTE "SUPER MARIO BROS - 0525", 0
+strWelcome BYTE "*** WELCOME TO SUPER MARIO BROS ***", 0
+strMenuStart BYTE "1. START GAME", 0
+strLev1 BYTE "1  LEVEL 1", 0
+strMenuHighscore BYTE "2. HIGHSCORE", 0
+strMenuInstructions BYTE "3. INSTRUCTIONS", 0
+strMenuExit BYTE "4. EXIT", 0
+strEnterChoice BYTE "ENTER YOUR CHOICE (1-4): ", 0
+strEnterName BYTE "ENTER YOUR NAME: ", 0
+strInvalidChoice BYTE "INVALID CHOICE! PRESS ANY KEY...", 0
+strScore BYTE "SCORE:", 0
+strCoins BYTE "COINS:", 0
+strWorld BYTE "WORLD:", 0
+strTime BYTE "TIME:", 0
+strLife BYTE "LIFE:", 0
+strBossHealth BYTE "BOSS HP:", 0
+strGameOver BYTE "GAME OVER", 0
+strYouDied BYTE "YOU DIED! PRESS ANY KEY", 0
+strLevelComplete BYTE "LEVEL COMPLETE!", 0
+strBossDefeated BYTE "BOSS DEFEATED!", 0
+strAllComplete BYTE "ALL LEVELS COMPLETE!", 0
+strPressAnyKey BYTE "PRESS ANY KEY TO START", 0
+strNextLevel BYTE "PRESS ANY KEY FOR NEXT LEVEL", 0
+strRestart BYTE "PRESS R TO RESTART OR X TO EXIT", 0
+strScoreSaved BYTE "SCORE SAVED!", 0
+strThankYou BYTE "THANK YOU FOR PLAYING!", 0
+strPaused BYTE "GAME PAUSED", 0
+strPauseInstruction BYTE "PRESS ESC TO RESUME OR X TO EXIT", 0
+strBossWarning BYTE "*** BOSS BATTLE ***", 0
+strBossPhase2 BYTE "BOSS ENRAGED!", 0
+strLevelSelect BYTE "SELECT LEVEL (1-2):", 0
+strInvalidLevel BYTE "INVALID LEVEL! PRESS ANY KEY...", 0
+strNoScores BYTE "NO HIGH SCORES YET. PLAY A GAME!", 0
+strHighscoreTitle BYTE "*** HIGH SCORES ***", 0
+strHighestScore BYTE "HIGHEST SCORE: ", 0
+strHighestScorerName BYTE "PLAYER: ", 0
+strTimeBonus BYTE "TIME BONUS: +", 0
+strTimeLeft BYTE "TIME LEFT: ", 0
+strTotalScore BYTE "TOTAL SCORE: ", 0
+strPrincessBorder BYTE "***************************", 0
+strPrincessEmpty BYTE "*                         *", 0
+strPrincessRescued BYTE "*  PRINCESS PEACH RESCUED *", 0
+strThankMario BYTE "THANK YOU MARIO!", 0
+strQuestOver BYTE "YOUR QUEST IS OVER.", 0
+strBossBonus BYTE "BOSS BONUS: +5000", 0
+strHeroMsg BYTE "YOU ARE A HERO!", 0
+strPressContinue BYTE "PRESS ANY KEY TO CONTINUE", 0
+strBonusRoom BYTE "*** CASTLE BONUS ***", 0
+strBonusTimer BYTE "TIME:", 0
+strBonusComplete BYTE "BONUS COMPLETE!", 0
+strBonusEntry BYTE "?", 0
+strCastleTitle BYTE "SECRET CASTLE", 0
+ground BYTE "------------------------------------------------------------------------------------------------------------------------", 0
+
+strInstructionsTitle BYTE "*** HOW TO PLAY ***", 0
+strInstr1 BYTE "MOVEMENT:", 0
+strInstr2 BYTE "  A or LEFT ARROW  - Move Left", 0
+strInstr3 BYTE "  D or RIGHT ARROW - Move Right", 0
+strInstr4 BYTE "  W or UP ARROW    - Jump", 0
+strInstr5 BYTE "  SPACE            - Double Jump (when in air)", 0
+strInstr6 BYTE "GAME CONTROLS:", 0
+strInstr7 BYTE "  ESC              - Pause Game", 0
+strInstr8 BYTE "  X                - Exit/Quit", 0
+strInstr9 BYTE "OBJECTIVE:", 0
+strInstr10 BYTE "  - Collect coins (O) for points", 0
+strInstr11 BYTE "  - Reach the flag (|) to complete level", 0
+strInstr12 BYTE "  - Defeat boss by jumping on it 5 times", 0
+strInstr13 BYTE "  - Avoid enemies: Goomba (G), Koopa (K)", 0
+strInstr14 BYTE "POWER-UPS:", 0
+strInstr15 BYTE "  ! - Spring Mushroom (High Jump Power)", 0
+strInstr16 BYTE "  * - Star (Adds 3 seconds to timer)", 0
+strInstrBack BYTE "PRESS ANY KEY TO RETURN TO MENU", 0
+
+scoreFileName BYTE "scores.txt", 0
+
+fileHandle DWORD ?
+scoreBuffer BYTE 200 DUP(0)
+existingScores BYTE 1000 DUP(0)
+existingScoresLen DWORD 0
+highestScoreName BYTE 50 DUP(0)
+
+; Add to DATA section after other declarations
+flagX BYTE 115
+flagY BYTE GROUND_LEVEL - 10
+flagActive BYTE 0
+flagStr BYTE "|", 0
+
+; Add to LEVEL 1 SCREEN 2 DATA section
+flagX_L1_S2 BYTE 115
+flagY_L1_S2 BYTE GROUND_LEVEL - 10
+
+; REMOVED: Level 2 and Level 3 flags (not needed)
+
+.code
+
+main PROC
+call Randomize
+
+mainMenu :
+call ShowWelcomeMenu
+call GetPlayerName
+call SelectLevel
+call DrawTitleScreen
+mov score, 0
+mov coins, 0
+mov lives, 3
+mov timeLeft, 400
+mov gameActive, 1
+
+gameMainLoop:
+mov al, level
+cmp al, 4
+je clearBlack
+
+; Check if in bonus room
+cmp inBonusRoom, 1
+je clearBlack
+
+call Clrscr; Normal clear
+jmp afterClear
+clearBlack :
+mov eax, white + (black * 16)
+call SetTextColor
+call Clrscr
+afterClear :
+call Clrscr
+
+; Set background color based on level/mode
+cmp inBonusRoom, 1
+je setBonusRoomBackground
+
+mov al, level
+cmp al, 1
+je setLevel1Background
+; Level 4 (Boss)
+mov eax, white + (black * 16)
+jmp setColorDone
+
+setBonusRoomBackground:
+mov eax, yellow + (black * 16)
+jmp setColorDone
+
+setLevel1Background :
+mov eax, LEVEL1_ATTR
+setColorDone :
+    call SetTextColor
+
+    call HandleInput
+    call UpdatePhysics
+    call UpdateGame
+
+    call DrawUI
+    call DrawClouds
+    call DrawLevel
+    call DrawPlayer
+    call DrawEnemies
+    call DrawBoss
+    call DrawProjectiles
+    call DrawPowerUps
+    call DrawStar
+    call DrawCoins
+    call DrawFlag
+    call CheckFlagCollision
+    call CheckBonusRoomEntry
+    call DrawBonusRoomPortal
+    
+    ; Play background music
+    call PlayBackgroundMusic
+
+    mov eax, 50
+    call Delay
+
+    cmp gameActive, 1
+    je gameMainLoop
+
+    call SaveScoreToFile
+    call ShowGameOver
+    cmp gameActive, 1
+    je mainMenu
+
+    call Clrscr
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    mov dl, 48
+    mov dh, 12
+    call Gotoxy
+    mov edx, OFFSET strThankYou
+    call WriteString
+    mov dl, 45
+    mov dh, 14
+    call Gotoxy
+    mov edx, OFFSET strScoreSaved
+    call WriteString
+    mov eax, 2000
+    call Delay
+
+    exit
+    main ENDP
+
+    ; ===============================================
+    ; SOUND PROCEDURES
+    ; ===============================================
+    
+    ; PlaySound - Play a simple beep sound
+    ; Input: EAX = frequency (Hz), EBX = duration (ms)
+    PlaySound PROC
+        pushad
+        
+        cmp soundEnabled, 0
+        je soundSkip
+        
+        ; Use MessageBeep Windows API for simple sound
+        ; Map frequencies to different beep types
+        cmp eax, SOUND_COIN
+        jge highPitch
+        cmp eax, SOUND_ENEMY_DEFEAT
+        jge mediumPitch
+        
+        ; Low pitch (game over, boss hit)
+        INVOKE MessageBeep, MB_ICONERROR
+        jmp soundDelay
+        
+    mediumPitch:
+        INVOKE MessageBeep, MB_ICONWARNING
+        jmp soundDelay
+        
+    highPitch:
+        INVOKE MessageBeep, MB_ICONINFORMATION
+        
+    soundDelay:
+        ; Add a small delay for duration effect
+        mov eax, ebx
+        shr eax, 2              ; Quarter of requested duration
+        call Delay
+        
+    soundSkip:
+        popad
+        ret
+    PlaySound ENDP
+    
+    ; PlayBackgroundMusic - Play background music loop
+    PlayBackgroundMusic PROC
+        pushad
+        
+        cmp bgmEnabled, 0
+        je bgmSkip
+        
+        ; Simple background music - play a beep every 80 frames
+        inc bgmCounter
+        cmp bgmCounter, 80      ; Play note every 80 game frames
+        jl bgmSkip
+        mov bgmCounter, 0
+        
+        ; Play a simple pleasant beep
+        INVOKE MessageBeep, MB_OK
+        
+    bgmSkip:
+        popad
+        ret
+    PlayBackgroundMusic ENDP
+
+    ShowWelcomeMenu PROC
+        push eax
+        push edx
+
+    menuLoop:
+    call Clrscr
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    
+    mWriteString 42, 8, strWelcome
+    mWriteString 52, 12, strMenuStart
+    mWriteString 52, 14, strMenuHighscore
+    mWriteString 52, 16, strMenuInstructions
+    mWriteString 52, 18, strMenuExit
+    mWriteString 45, 22, strEnterChoice
+    
+        call ReadChar
+    
+        cmp al, '1'
+        je startGame
+        cmp al, '2'
+        je showHighscore
+        cmp al, '3'
+        je showInstructions
+        cmp al, '4'
+        je exitProgram
+    
+    mWriteString 42, 24, strInvalidChoice
+        call ReadChar
+        jmp menuLoop
+
+    showHighscore:
+        call ShowHighscore
+        jmp menuLoop
+
+    showInstructions:
+        call ShowInstructions
+        jmp menuLoop
+
+    startGame:
+        pop edx
+        pop eax
+        ret
+
+    exitProgram:
+        call Clrscr
+        mov eax, DEFAULT_ATTR
+        call SetTextColor
+    mWriteString 48, 12, strThankYou
+        mov eax, 2000
+        call Delay
+        exit
+    ShowWelcomeMenu ENDP
+
+ShowHighscore PROC
+pushad
+
+call Clrscr
+mov eax, DEFAULT_ATTR
+call SetTextColor
+
+mov dl, 48
+mov dh, 8
+call Gotoxy
+mov edx, OFFSET strHighscoreTitle
+call WriteString
+
+mov edx, OFFSET scoreFileName
+call OpenInputFile
+mov fileHandle, eax
+cmp eax, INVALID_HANDLE_VALUE
+je noScores
+
+mov edx, OFFSET existingScores
+mov ecx, SIZEOF existingScores - 1
+call ReadFromFile
+mov existingScoresLen, eax
+mov eax, fileHandle
+call CloseFile
+
+cmp existingScoresLen, 0
+je noScores
+
+mov esi, OFFSET existingScores
+mov edi, 0
+mov ebx, 0
+mov edx, 0; Pointer to the start of the current name
+
+parseLoop :
+cmp edi, existingScoresLen
+jge displayHighest
+
+; Find 'Name:'
+mov al, [esi]
+cmp al, 'N'
+jne findScore
+mov al, [esi + 1]
+cmp al, 'a'
+jne findScore
+mov al, [esi + 2]
+cmp al, 'm'
+jne findScore
+mov al, [esi + 3]
+cmp al, 'e'
+jne findScore
+mov al, [esi + 4]
+cmp al, ':'
+jne findScore
+
+; Found "Name:", store pointer to the actual name
+mov edx, esi
+add edx, 6; Point past "Name: "
+
+findScore:
+mov al, [esi]
+cmp al, 'S'
+jne notScoreLine
+mov al, [esi + 1]
+cmp al, 'c'
+jne notScoreLine
+mov al, [esi + 2]
+cmp al, 'o'
+jne notScoreLine
+mov al, [esi + 3]
+cmp al, 'r'
+jne notScoreLine
+mov al, [esi + 4]
+cmp al, 'e'
+jne notScoreLine
+mov al, [esi + 5]
+cmp al, ':'
+jne notScoreLine
+
+add esi, 7
+add edi, 7
+
+xor ecx, ecx
+
+convertLoop :
+cmp edi, existingScoresLen
+jge checkHighest
+
+mov al, [esi]
+cmp al, ','
+je checkHighest
+cmp al, 0Dh
+je checkHighest
+cmp al, '0'
+jb notANumber
+cmp al, '9'
+ja notANumber
+
+sub al, '0'
+imul ecx, 10
+add ecx, eax
+
+inc esi
+inc edi
+jmp convertLoop
+
+notANumber :
+; If we hit something that's not a number, just continue parsing from the next line
+jmp notHighest
+
+checkHighest :
+cmp ecx, ebx
+jle notHighest
+mov ebx, ecx
+
+; New high score, so save the name
+push esi; Save current position
+push edi
+mov esi, edx; Start of name
+mov edi, OFFSET highestScoreName
+; Copy name until ','
+copyLoop:
+mov al, [esi]
+cmp al, ','
+je endCopy
+mov[edi], al
+inc esi
+inc edi
+jmp copyLoop
+endCopy :
+mov byte ptr[edi], 0; Null - terminate the name
+pop edi
+pop esi
+
+notHighest :
+inc esi
+inc edi
+jmp parseLoop
+
+notScoreLine :
+inc esi
+inc edi
+jmp parseLoop
+
+displayHighest :
+mov dl, 48
+mov dh, 12
+call Gotoxy
+mov edx, OFFSET strHighestScore
+call WriteString
+mov eax, ebx
+call WriteDec
+
+mov dl, 48
+mov dh, 14
+call Gotoxy
+mov edx, OFFSET strHighestScorerName
+call WriteString
+mov edx, OFFSET highestScoreName
+call WriteString
+
+jmp endProc
+
+noScores :
+mov dl, 42
+mov dh, 12
+call Gotoxy
+mov edx, OFFSET strNoScores
+call WriteString
+
+endProc :
+mov dl, 42
+mov dh, 20
+call Gotoxy
+mov edx, OFFSET strPressAnyKey
+call WriteString
+call ReadChar
+
+popad
+ret
+ShowHighscore ENDP
+
+ShowInstructions PROC
+    pushad
+    
+    call Clrscr
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    
+    ; Title
+    mov dl, 48
+    mov dh, 4
+    call Gotoxy
+    mov edx, OFFSET strInstructionsTitle
+    call WriteString
+    
+    ; Movement section
+    mov dl, 35
+    mov dh, 7
+    call Gotoxy
+    mov edx, OFFSET strInstr1
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 8
+    call Gotoxy
+    mov edx, OFFSET strInstr2
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 9
+    call Gotoxy
+    mov edx, OFFSET strInstr3
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 10
+    call Gotoxy
+    mov edx, OFFSET strInstr4
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 11
+    call Gotoxy
+    mov edx, OFFSET strInstr5
+    call WriteString
+    
+    ; Game controls section
+    mov dl, 35
+    mov dh, 13
+    call Gotoxy
+    mov edx, OFFSET strInstr6
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 14
+    call Gotoxy
+    mov edx, OFFSET strInstr7
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 15
+    call Gotoxy
+    mov edx, OFFSET strInstr8
+    call WriteString
+    
+    ; Objective section
+    mov dl, 35
+    mov dh, 17
+    call Gotoxy
+    mov edx, OFFSET strInstr9
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 18
+    call Gotoxy
+    mov edx, OFFSET strInstr10
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 19
+    call Gotoxy
+    mov edx, OFFSET strInstr11
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 20
+    call Gotoxy
+    mov edx, OFFSET strInstr12
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 21
+    call Gotoxy
+    mov edx, OFFSET strInstr13
+    call WriteString
+    
+    ; Power-ups section
+    mov dl, 35
+    mov dh, 23
+    call Gotoxy
+    mov edx, OFFSET strInstr14
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 24
+    call Gotoxy
+    mov edx, OFFSET strInstr15
+    call WriteString
+    
+    mov dl, 35
+    mov dh, 25
+    call Gotoxy
+    mov edx, OFFSET strInstr16
+    call WriteString
+    
+    ; Back prompt
+    mov dl, 38
+    mov dh, 27
+    call Gotoxy
+    mov edx, OFFSET strInstrBack
+    call WriteString
+    
+    call ReadChar
+    
+    popad
+    ret
+ShowInstructions ENDP
+
+GetPlayerName PROC
+    pushad
+    call Clrscr
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    mWriteString 48, 12, strEnterName
+    mov edx, OFFSET playerName
+    mov ecx, 49
+    call ReadString
+    mov nameLength, al
+    popad
+    ret
+GetPlayerName ENDP
+
+SelectLevel PROC
+    pushad
+
+selectLevelLoop:
+call Clrscr
+mov eax, DEFAULT_ATTR
+call SetTextColor
+    
+mWriteString 48, 10, strLevelSelect
+mWriteString 50, 12, strLev1
+mov dl, 50
+mov dh, 14
+call Gotoxy
+mov al, '2'
+call WriteChar
+mov dl, 53
+mov dh, 14
+call Gotoxy
+mov al, '-'
+call WriteChar
+mov al, ' '
+call WriteChar
+mov edx, OFFSET strBossWarning
+call WriteString
+    
+    call ReadChar
+    
+    cmp al, '1'
+    je setLevel1
+    cmp al, '2'
+    je setLevel4
+    
+    mWriteString 42, 22, strInvalidLevel
+    call ReadChar
+    jmp selectLevelLoop
+
+setLevel1:
+    mov level, 1
+    jmp levelSelected
+
+setLevel4:
+    mov level, 4
+
+levelSelected:
+    mov al, level
+    add al, 30h
+    mov worldStr[2], al
+    call LoadLevel
+    popad
+    ret
+SelectLevel ENDP
+
+    SaveScoreToFile PROC
+    push eax
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+
+    cmp nameLength, 0
+    je saveError
+
+    mov edx, OFFSET scoreFileName
+    call OpenInputFile
+    mov fileHandle, eax
+
+    cmp eax, INVALID_HANDLE_VALUE
+    je createNewFile
+
+    mov edx, OFFSET existingScores
+    mov ecx, 999
+    call ReadFromFile
+    mov existingScoresLen, eax
+
+    mov eax, fileHandle
+    call CloseFile
+
+    mov edx, OFFSET scoreFileName
+    call CreateOutputFile
+    mov fileHandle, eax
+    cmp eax, INVALID_HANDLE_VALUE
+    je saveError
+
+    mov eax, existingScoresLen
+    cmp eax, 0
+    je buildNewEntry
+
+    push eax
+    mov eax, fileHandle
+    mov edx, OFFSET existingScores
+    mov ecx, existingScoresLen
+    call WriteToFile
+    pop eax
+
+    jmp buildNewEntry
+
+    createNewFile :
+mov edx, OFFSET scoreFileName
+call CreateOutputFile
+mov fileHandle, eax
+cmp eax, INVALID_HANDLE_VALUE
+je saveError
+
+mov existingScoresLen, 0
+
+buildNewEntry:
+mov edi, OFFSET scoreBuffer
+
+cmp existingScoresLen, 0
+je noNewlineNeeded
+mov al, 13
+stosb
+mov al, 10
+stosb
+
+noNewlineNeeded :
+mov al, 'N'
+stosb
+mov al, 'a'
+stosb
+mov al, 'm'
+stosb
+mov al, 'e'
+stosb
+mov al, ':'
+stosb
+mov al, ' '
+stosb
+
+mov esi, OFFSET playerName
+movzx ecx, nameLength
+copyNameLoop :
+cmp ecx, 0
+je skipName
+lodsb
+cmp al, 0
+je skipName
+stosb
+dec ecx
+jmp copyNameLoop
+skipName :
+
+mov al, ','
+stosb
+mov al, ' '
+stosb
+mov al, 'S'
+stosb
+mov al, 'c'
+stosb
+mov al, 'o'
+stosb
+mov al, 'r'
+stosb
+mov al, 'e'
+stosb
+mov al, ':'
+stosb
+mov al, ' '
+stosb
+
+mov eax, score
+cmp eax, 0
+jne hasScore
+mov al, '0'
+stosb
+jmp skipScoreConvert
+
+hasScore :
+mov ebx, 10
+xor ecx, ecx
+mov esi, OFFSET scoreBuffer
+add esi, 100
+
+digitLoop :
+    xor edx, edx
+    div ebx
+    add dl, '0'
+    mov[esi + ecx], dl
+    inc ecx
+    cmp eax, 0
+    jne digitLoop
+
+    writeDigits :
+dec ecx
+mov al, [esi + ecx]
+stosb
+cmp ecx, 0
+jne writeDigits
+
+skipScoreConvert :
+mov al, ','
+stosb
+mov al, ' '
+stosb
+mov al, 'L'
+stosb
+mov al, 'e'
+stosb
+mov al, 'v'
+stosb
+mov al, 'e'
+stosb
+mov al, 'l'
+stosb
+mov al, ':'
+stosb
+mov al, ' '
+stosb
+
+movzx eax, level
+add al, '0'
+stosb
+
+mov ecx, edi
+sub ecx, OFFSET scoreBuffer
+
+mov eax, fileHandle
+mov edx, OFFSET scoreBuffer
+call WriteToFile
+
+mov eax, fileHandle
+call CloseFile
+
+push eax
+push edx
+mov dl, 45
+mov dh, 22
+call Gotoxy
+mov edx, OFFSET strScoreSaved
+call WriteString
+mov eax, 500
+call Delay
+pop edx
+pop eax
+
+saveError :
+pop edi
+pop esi
+pop edx
+pop ecx
+pop ebx
+pop eax
+ret
+SaveScoreToFile ENDP
+
+DrawTitleScreen PROC
+    call Clrscr
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    mWriteString 50, 5, strTitle
+    mWriteString 0, (GROUND_LEVEL + 2), ground
+    mov dl, 55
+    mov dh, GROUND_LEVEL
+    call Gotoxy
+    mov eax, GREEN_MARIO
+    call SetTextColor
+    mov al, 'M'
+    call WriteChar
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    mWriteString 48, 20, strPressAnyKey
+    call ReadChar
+    ret
+DrawTitleScreen ENDP
+
+DrawUI PROC
+    mov al, level
+    cmp al, 4
+    je setBossUIColor
+    
+    ; Check if in bonus room
+    cmp inBonusRoom, 1
+    je setBonusRoomColor
+    
+    mov eax, DEFAULT_ATTR
+    jmp setUIColorDone
+    
+setBonusRoomColor:
+    mov eax, yellow + (black * 16)
+    jmp setUIColorDone
+    
+setBossUIColor:
+    mov eax, white + (black * 16)
+setUIColorDone:
+    call SetTextColor
+
+    mWriteString 5, 1, strScore
+    mov dl, 5
+    mov dh, 2
+    call Gotoxy
+    mov eax, score
+    call WriteDec
+    
+    mWriteString 20, 1, strCoins
+    mov dl, 20
+    mov dh, 2
+    call Gotoxy
+    movzx eax, coins
+    call WriteDec
+    
+    ; Check if in bonus room
+    cmp inBonusRoom, 1
+    je showBonusRoomUI
+    
+    mWriteString 35, 1, strWorld
+    mWriteString 35, 2, worldStr
+    
+    mWriteString 50, 1, strTime
+    mov dl, 50
+    mov dh, 2
+    call Gotoxy
+    mov eax, timeLeft
+    call WriteDec
+    
+    jmp continueUI
+
+showBonusRoomUI:
+    ; Show BONUS ROOM title
+    mWriteString 35, 1, strBonusRoom
+    
+    ; Show bonus timer
+    mWriteString 50, 1, strBonusTimer
+    mov dl, 56
+    mov dh, 2
+    call Gotoxy
+    mov eax, bonusRoomTimer
+    call WriteDec
+    
+continueUI:
+    mWriteString 65, 1, strLife
+    mov dl, 65
+    mov dh, 2
+    call Gotoxy
+    movzx eax, lives
+    call WriteDec
+
+    mov al, level
+    cmp al, 4
+    jne skipBossHP
+    cmp bossActive, 1
+    jne skipBossHP
+    mWriteString 80, 1, strBossHealth
+    mov dl, 89
+    mov dh, 2
+    call Gotoxy
+    movzx eax, bossHealth
+    call WriteDec
+skipBossHP:
+    mWriteString 0, GROUND_LEVEL, ground
+    ret
+DrawUI ENDP
+
+DrawClouds PROC
+pushad
+
+; Draw clouds
+mov ecx, cloudCount
+xor esi, esi
+cloudLoop:
+test ecx, ecx
+jz drawBirds
+
+; Set color to white for clouds
+mov eax, white + (lightBlue * 16)
+call SetTextColor
+
+mov dl, cloudX[esi]
+mov dh, cloudY[esi]
+call Gotoxy
+mov edx, OFFSET cloudStr
+call WriteString
+inc esi
+dec ecx
+jmp cloudLoop
+
+drawBirds:
+; Draw birds in the sky
+mov ecx, birdCount
+xor esi, esi
+
+birdLoop:
+test ecx, ecx
+jz cloudsDone
+
+; Set color to white for birds
+mov eax, white + (lightBlue * 16)
+call SetTextColor
+
+mov dl, birdX[esi]
+mov dh, birdY[esi]
+call Gotoxy
+
+; Alternate between different bird patterns based on bird index
+push eax
+mov eax, esi
+and eax, 3  ; Get remainder when divided by 4 (esi % 4)
+cmp al, 0
+je drawBird1
+cmp al, 1
+je drawBird2
+pop eax
+jmp drawBird3
+
+drawBird1:
+pop eax
+mov edx, OFFSET birdStr1
+call WriteString
+jmp nextBird
+
+drawBird2:
+pop eax
+mov edx, OFFSET birdStr2
+call WriteString
+jmp nextBird
+
+drawBird3:
+mov edx, OFFSET birdStr3
+call WriteString
+
+nextBird:
+inc esi
+dec ecx
+jmp birdLoop
+
+cloudsDone:
+; Reset color based on level
+mov al, level
+cmp al, 1
+je resetLevel1CloudColor
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp cloudsEnd
+
+resetLevel1CloudColor:
+mov eax, LEVEL1_ATTR
+call SetTextColor
+
+cloudsEnd:
+popad
+ret
+DrawClouds ENDP
+
+DrawLevel PROC
+xor edi, edi
+plLoop :
+cmp edi, platformCount
+jge plDone
+mov dl, platformX[edi]
+mov dh, platformY[edi]
+call Gotoxy
+movzx ecx, platformWidth[edi]
+
+; Check if in bonus room
+cmp inBonusRoom, 1
+je drawCastlePlatform
+
+mov al, level
+cmp al, 1
+je drawLevel1Platform
+; Boss level - default platform
+mov al, '='
+plInner2 :
+    call WriteChar
+    loop plInner2
+    jmp nextPlatform
+
+drawCastlePlatform:
+    ; Castle battlements pattern
+    mov eax, gray + (black * 16)
+    call SetTextColor
+    mov al, 219  ; Solid block for castle
+castlePlInner:
+    call WriteChar
+    loop castlePlInner
+    mov eax, yellow + (black * 16)
+    call SetTextColor
+    jmp nextPlatform
+
+    drawLevel1Platform :
+mov eax, BRICK_ATTR
+call SetTextColor
+mov al, 205
+plInner :
+    call WriteChar
+    loop plInner
+    mov eax, LEVEL1_ATTR
+    call SetTextColor
+    nextPlatform :
+inc edi
+jmp plLoop
+plDone :
+
+mov ecx, wallCount
+xor esi, esi
+wallLoop :
+test ecx, ecx
+jz wallsDone
+mov al, wallYBottom[esi]
+sub al, wallYTop[esi]
+inc al
+mov bl, wallYTop[esi]
+push ecx
+movzx ecx, al
+
+; Check if in bonus room
+cmp inBonusRoom, 1
+je drawCastleWall
+
+mov al, level
+cmp al, 1
+je drawLevel1Wall
+; Boss level - default wall
+wallDrawVert2:
+mov dl, wallX[esi]
+mov dh, bl
+call Gotoxy
+mov al, '#'
+call WriteChar
+inc bl
+loop wallDrawVert2
+jmp nextWall
+
+drawCastleWall:
+    ; Castle tower walls
+    mov eax, gray + (black * 16)
+    call SetTextColor
+castleWallVert:
+    mov dl, wallX[esi]
+    mov dh, bl
+    call Gotoxy
+    mov al, 219  ; Solid block for towers
+    call WriteChar
+    inc bl
+    loop castleWallVert
+    mov eax, yellow + (black * 16)
+    call SetTextColor
+    jmp nextWall
+
+drawLevel1Wall :
+mov eax, PIPE_ATTR
+call SetTextColor
+wallDrawVert :
+mov dl, wallX[esi]
+mov dh, bl
+call Gotoxy
+mov al, 186
+call WriteChar
+inc bl
+loop wallDrawVert
+mov eax, LEVEL1_ATTR
+call SetTextColor
+nextWall :
+pop ecx
+inc esi
+dec ecx
+jmp wallLoop
+wallsDone :
+; Reset text color
+cmp inBonusRoom, 1
+je resetCastleColor
+mov eax, LEVEL1_ATTR
+call SetTextColor
+jmp levelDrawDone
+
+resetCastleColor:
+mov eax, yellow + (black * 16)
+call SetTextColor
+
+levelDrawDone:
+ret
+DrawLevel ENDP
+
+DrawPlayer PROC
+mov dl, marioX
+mov dh, marioY
+call Gotoxy
+
+; Check if in bonus room
+cmp inBonusRoom, 1
+je drawBonusRoomMario
+
+mov al, level
+cmp al, 1
+je drawLevel1Mario
+; Boss level - default Mario
+mov eax, GREEN_MARIO
+call SetTextColor
+jmp drawMario
+
+drawBonusRoomMario:
+mov eax, yellow + (black * 16)
+call SetTextColor
+jmp drawMario
+
+drawLevel1Mario :
+mov eax, green + (lightGreen * 16)
+call SetTextColor
+
+drawMario :
+mov al, 'M'
+cmp hasSpringPower, 1
+jne normalP
+mov al, 'S'
+normalP :
+    call WriteChar
+    
+    ; Reset color
+    cmp inBonusRoom, 1
+    je resetBonusRoomColor
+    
+    mov al, level
+    cmp al, 1
+    je resetLevel1Color
+    ; Boss level - normal color
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    jmp drawPlayerDone
+
+resetBonusRoomColor:
+    mov eax, yellow + (black * 16)
+    call SetTextColor
+    jmp drawPlayerDone
+
+    resetLevel1Color :
+mov eax, LEVEL1_ATTR
+call SetTextColor
+drawPlayerDone :
+ret
+DrawPlayer ENDP
+
+DrawEnemies PROC
+; Draw Goomba 1
+cmp goomba1Active, 1
+jne skipG1
+mov dl, goomba1X
+mov dh, goomba1Y
+call Gotoxy
+mov al, level
+cmp al, 1
+je drawLevel1Enemy1
+; Boss level - default enemy
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp drawEnemy1
+
+drawLevel1Enemy1 :
+mov eax, brown + (lightBlue * 16)
+call SetTextColor
+
+drawEnemy1 :
+; Draw 2-character wide Goomba (like boss)
+mov al, 'G'
+call WriteChar
+mov dl, goomba1X
+inc dl
+mov dh, goomba1Y
+call Gotoxy
+mov al, 'G'
+call WriteChar
+
+mov al, level
+cmp al, 1
+je resetLevel1Enemy1Color
+; Boss level
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp skipG1
+
+resetLevel1Enemy1Color :
+mov eax, LEVEL1_ATTR
+call SetTextColor
+skipG1 :
+
+; Draw Goomba 2
+cmp goomba2Active, 1
+jne skipG2
+mov dl, goomba2X
+mov dh, goomba2Y
+call Gotoxy
+mov al, level
+cmp al, 1
+je drawLevel1Enemy2
+; Boss level - default enemy
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp drawEnemy2
+
+drawLevel1Enemy2 :
+mov eax, brown + (lightBlue * 16)
+call SetTextColor
+
+drawEnemy2 :
+mov al, 'G'
+call WriteChar
+mov dl, goomba2X
+inc dl
+mov dh, goomba2Y
+call Gotoxy
+mov al, 'G'
+call WriteChar
+
+mov al, level
+cmp al, 1
+je resetLevel1Enemy2Color
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp skipG2
+
+resetLevel1Enemy2Color :
+mov eax, LEVEL1_ATTR
+call SetTextColor
+skipG2 :
+
+; Draw Goomba 3
+cmp goomba3Active, 1
+jne skipG3
+mov dl, goomba3X
+mov dh, goomba3Y
+call Gotoxy
+mov al, level
+cmp al, 1
+je drawLevel1Enemy3
+; Boss level - default enemy
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp drawEnemy3
+
+drawLevel1Enemy3 :
+mov eax, brown + (lightBlue * 16)
+call SetTextColor
+
+drawEnemy3 :
+mov al, 'G'
+call WriteChar
+mov dl, goomba3X
+inc dl
+mov dh, goomba3Y
+call Gotoxy
+mov al, 'G'
+call WriteChar
+
+mov al, level
+cmp al, 1
+je resetLevel1Enemy3Color
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp skipG3
+
+resetLevel1Enemy3Color :
+mov eax, LEVEL1_ATTR
+call SetTextColor
+skipG3 :
+
+; Draw Koopa Troopa
+cmp koopaActive, 1
+jne skipKoopa
+mov dl, koopaX
+mov dh, koopaY
+call Gotoxy
+
+cmp koopaShell, 1
+je drawShell
+
+; Draw normal Koopa
+mov al, level
+cmp al, 1
+je drawLevel1Koopa
+; Boss level - default Koopa
+mov eax, green + (black * 16)
+call SetTextColor
+jmp drawKoopaChar
+
+drawLevel1Koopa :
+mov eax, green + (lightBlue * 16)
+call SetTextColor
+
+drawKoopaChar :
+; Draw 2-character wide Koopa (like boss)
+mov al, 'K'
+call WriteChar
+mov dl, koopaX
+inc dl
+mov dh, koopaY
+call Gotoxy
+mov al, 'K'
+call WriteChar
+jmp resetKoopaColor
+
+drawShell :
+mov eax, DARKGRAY_ATTR
+call SetTextColor
+; Draw 2-character wide shell (like boss)
+mov al, 'S'
+call WriteChar
+mov dl, koopaX
+inc dl
+mov dh, koopaY
+call Gotoxy
+mov al, 'S'
+call WriteChar
+
+resetKoopaColor :
+mov al, level
+cmp al, 1
+je resetLevel1KoopaColor
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp skipKoopa
+
+resetLevel1KoopaColor :
+mov eax, LEVEL1_ATTR
+call SetTextColor
+
+skipKoopa :
+ret
+DrawEnemies ENDP
+
+DrawPowerUps PROC
+cmp springActive, 1
+jne skipSpr
+mov dl, springMushroomX
+mov dh, springMushroomY
+call Gotoxy
+mov al, level
+cmp al, 1
+je drawLevel1PowerUp
+; Boss level - default power-up
+mov eax, green + (black * 16)
+call SetTextColor
+jmp drawPowerUp
+
+drawLevel1PowerUp :
+mov eax, green + (lightBlue * 16)
+call SetTextColor
+
+drawPowerUp :
+mov al, '!'
+call WriteChar
+mov al, level
+cmp al, 1
+je resetLevel1PowerUpColor
+; Boss level
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp skipSpr
+
+resetLevel1PowerUpColor :
+mov eax, LEVEL1_ATTR
+call SetTextColor
+skipSpr :
+ret
+DrawPowerUps ENDP
+
+DrawStar PROC
+pushad
+
+cmp starActive, 1
+jne starDrawDone
+
+mov dl, starX
+mov dh, starY
+call Gotoxy
+
+mov al, level
+cmp al, 1
+je drawLevel1Star
+; Boss level - bright star
+mov eax, yellow + (black * 16)
+call SetTextColor
+jmp drawStarChar
+
+drawLevel1Star :
+mov eax, yellow + (lightBlue * 16)
+call SetTextColor
+
+drawStarChar :
+mov al, '*'
+call WriteChar
+
+mov al, level
+cmp al, 1
+je resetLevel1StarColor
+; Boss level
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp starDrawDone
+
+resetLevel1StarColor :
+mov eax, LEVEL1_ATTR
+call SetTextColor
+
+starDrawDone :
+popad
+ret
+DrawStar ENDP
+
+DrawCoins PROC
+mov ecx, coinCount
+xor esi, esi
+coinLoop :
+test ecx, ecx
+jz coinDone
+cmp coinActive[esi], 1
+jne coinSkip
+mov dl, coinX[esi]
+mov dh, coinY[esi]
+call Gotoxy
+mov al, level
+cmp al, 1
+je drawLevel1Coin
+; Boss level - default coin
+mov eax, yellow + (blue * 16)
+call SetTextColor
+jmp drawCoin
+
+drawLevel1Coin :
+; Check if in bonus room
+cmp inBonusRoom, 1
+je drawBonusCoin
+mov eax, yellow + (lightBlue * 16)
+call SetTextColor
+jmp drawCoin
+
+drawBonusCoin:
+mov eax, yellow + (black * 16)
+call SetTextColor
+
+drawCoin :
+mov al, 'O'
+call WriteChar
+mov al, level
+cmp al, 1
+je resetLevel1CoinColor
+; Boss level
+mov eax, DEFAULT_ATTR
+call SetTextColor
+jmp coinSkip
+
+resetLevel1CoinColor :
+; Check if in bonus room
+cmp inBonusRoom, 1
+je resetBonusCoinColor
+mov eax, LEVEL1_ATTR
+call SetTextColor
+jmp coinSkip
+
+resetBonusCoinColor:
+mov eax, black + (white * 16)
+call SetTextColor
+
+coinSkip :
+inc esi
+dec ecx
+jmp coinLoop
+coinDone :
+ret
+DrawCoins ENDP
+
+; ===============================================
+; BONUS ROOM PROCEDURES
+; ===============================================
+
+CheckBonusRoomEntry PROC
+pushad
+
+; Only in Level 1
+mov al, level
+cmp al, 1
+jne noBonusEntry
+
+; Check if bonus room is active
+cmp bonusRoomActive, 0
+je noBonusEntry
+
+; Check if already in bonus room
+cmp inBonusRoom, 1
+je noBonusEntry
+
+; Check if Mario is near the portal
+mov al, marioX
+mov bl, bonusRoomEntryX
+sub al, bl
+cmp al, 0
+jge xPosDiffBonus
+neg al
+xPosDiffBonus:
+cmp al, 2
+jg noBonusEntry
+
+mov al, marioY
+mov bl, bonusRoomEntryY
+sub al, bl
+cmp al, 0
+jge yPosDiffBonus
+neg al
+yPosDiffBonus:
+cmp al, 2
+jg noBonusEntry
+
+; Enter bonus room!
+call EnterBonusRoom
+
+noBonusEntry:
+popad
+ret
+CheckBonusRoomEntry ENDP
+
+DrawBonusRoomPortal PROC
+pushad
+
+; Only in Level 1 and not in bonus room
+mov al, level
+cmp al, 1
+jne noPortalDraw
+
+cmp inBonusRoom, 1
+je noPortalDraw
+
+cmp bonusRoomActive, 0
+je noPortalDraw
+
+; Draw the portal
+mov dl, bonusRoomEntryX
+mov dh, bonusRoomEntryY
+call Gotoxy
+mov eax, yellow + (lightBlue * 16)
+call SetTextColor
+mov edx, OFFSET strBonusEntry
+call WriteString
+
+; Reset color
+mov eax, LEVEL1_ATTR
+call SetTextColor
+
+noPortalDraw:
+popad
+ret
+DrawBonusRoomPortal ENDP
+
+EnterBonusRoom PROC
+pushad
+
+; Save return position
+mov al, marioX
+mov returnFromBonusX, al
+mov al, marioY
+mov returnFromBonusY, al
+
+; Set bonus room state
+mov inBonusRoom, 1
+mov bonusRoomTimer, 15
+mov bonusRoomTimerCounter, 0
+mov bonusRoomActive, 0  ; Can't enter again
+
+; Reset Mario position in bonus room (center of castle)
+mov marioX, 55
+mov marioY, GROUND_LEVEL
+mov isJumping, 0
+mov marioVelocityY, 0
+
+; Load bonus room coins (castle layout)
+mov esi, OFFSET bonusRoomCoinX
+mov edi, OFFSET coinX
+mov ecx, bonusRoomCoinCount
+rep movsb
+
+mov esi, OFFSET bonusRoomCoinY
+mov edi, OFFSET coinY
+mov ecx, bonusRoomCoinCount
+rep movsb
+
+; Reset coin active status
+mov ecx, bonusRoomCoinCount
+xor esi, esi
+resetBonusCoins:
+mov bonusRoomCoinActive[esi], 1
+mov coinActive[esi], 1
+inc esi
+dec ecx
+jnz resetBonusCoins
+
+; Load castle platforms
+mov esi, OFFSET bonusRoomPlatformX
+mov edi, OFFSET platformX
+mov ecx, bonusRoomPlatformCount
+rep movsb
+
+mov esi, OFFSET bonusRoomPlatformY
+mov edi, OFFSET platformY
+mov ecx, bonusRoomPlatformCount
+rep movsb
+
+mov esi, OFFSET bonusRoomPlatformWidth
+mov edi, OFFSET platformWidth
+mov ecx, bonusRoomPlatformCount
+rep movsb
+
+; Load castle walls (towers)
+mov esi, OFFSET bonusRoomWallX
+mov edi, OFFSET wallX
+mov ecx, bonusRoomWallCount
+rep movsb
+
+mov esi, OFFSET bonusRoomWallYTop
+mov edi, OFFSET wallYTop
+mov ecx, bonusRoomWallCount
+rep movsb
+
+mov esi, OFFSET bonusRoomWallYBottom
+mov edi, OFFSET wallYBottom
+mov ecx, bonusRoomWallCount
+rep movsb
+
+; Deactivate all enemies in bonus room
+mov goomba1Active, 0
+mov goomba2Active, 0
+mov goomba3Active, 0
+mov koopaActive, 0
+
+; Play entry sound
+push eax
+push ebx
+mov eax, SOUND_POWERUP
+mov ebx, DURATION_LONG
+call PlaySound
+pop ebx
+pop eax
+
+popad
+ret
+EnterBonusRoom ENDP
+
+ExitBonusRoom PROC
+pushad
+
+; Clear screen
+call Clrscr
+
+; Show bonus complete message
+mov eax, yellow + (black * 16)
+call SetTextColor
+mWriteString 48, 12, strBonusComplete
+mov eax, 1000
+call Delay
+
+; Restore normal game state
+mov inBonusRoom, 0
+
+; Restore Mario position
+mov al, returnFromBonusX
+mov marioX, al
+mov al, returnFromBonusY
+mov marioY, al
+mov isJumping, 0
+mov marioVelocityY, 0
+
+; Restore original level layout based on screen version
+mov al, screenVersion
+cmp al, 1
+je reloadScreen1Data
+cmp al, 2
+je reloadScreen2Data
+; Must be screen 3
+jmp reloadScreen3Data
+
+reloadScreen1Data:
+; Screen 1 - restore Screen 1 layout
+; Restore coin positions
+mov coinX[0], 12
+mov coinX[1], 13
+mov coinX[2], 14
+mov coinX[3], 32
+mov coinX[4], 33
+mov coinX[5], 34
+mov coinX[6], 62
+mov coinX[7], 63
+mov coinX[8], 64
+mov coinX[9], 92
+mov coinX[10], 93
+mov coinX[11], 94
+mov coinX[12], 110
+mov coinX[13], 111
+mov coinX[14], 112
+
+; Restore platforms
+mov platformX[0], 10
+mov platformX[1], 30
+mov platformX[2], 60
+mov platformX[3], 28
+mov platformX[4], 85
+mov platformX[5], 95
+
+mov platformY[0], GROUND_LEVEL - 5
+mov platformY[1], GROUND_LEVEL - 8
+mov platformY[2], GROUND_LEVEL - 4
+mov platformY[3], GROUND_LEVEL - 10
+mov platformY[4], GROUND_LEVEL - 6
+mov platformY[5], GROUND_LEVEL - 12
+
+mov platformWidth[0], 10
+mov platformWidth[1], 10
+mov platformWidth[2], 8
+mov platformWidth[3], 7
+mov platformWidth[4], 9
+mov platformWidth[5], 5
+
+; Restore walls
+mov wallX[0], 25
+mov wallX[1], 55
+mov wallX[2], 80
+
+mov wallYTop[0], GROUND_LEVEL - 6
+mov wallYTop[1], GROUND_LEVEL - 8
+mov wallYTop[2], GROUND_LEVEL - 5
+
+mov wallYBottom[0], GROUND_LEVEL
+mov wallYBottom[1], GROUND_LEVEL - 2
+mov wallYBottom[2], GROUND_LEVEL
+
+; Screen 1 enemies
+mov goomba1X, 45
+mov goomba1Y, GROUND_LEVEL
+mov goomba1Active, 1
+mov goomba1Dir, 1
+
+mov goomba2X, 25
+mov goomba2Y, GROUND_LEVEL
+mov goomba2Active, 1
+mov goomba2Dir, -1
+
+mov goomba3X, 85
+mov goomba3Y, GROUND_LEVEL
+mov goomba3Active, 1
+mov goomba3Dir, 1
+
+mov koopaX, 70
+mov koopaY, GROUND_LEVEL
+mov koopaActive, 1
+mov koopaShell, 0
+mov koopaDir, -1
+
+; No flag on screen 1
+mov flagActive, 0
+jmp playExitSound
+
+reloadScreen2Data:
+; Screen 2 - restore Screen 2 layout
+mov esi, OFFSET coinX_L1_S2
+mov edi, OFFSET coinX
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET coinY_L1_S2
+mov edi, OFFSET coinY
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET platformX_L1_S2
+mov edi, OFFSET platformX
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformY_L1_S2
+mov edi, OFFSET platformY
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformWidth_L1_S2
+mov edi, OFFSET platformWidth
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET wallX_L1_S2
+mov edi, OFFSET wallX
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYTop_L1_S2
+mov edi, OFFSET wallYTop
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYBottom_L1_S2
+mov edi, OFFSET wallYBottom
+mov ecx, wallCount
+rep movsb
+
+; Screen 2 enemies
+mov al, goomba1X_L1_S2
+mov goomba1X, al
+mov al, goomba1Y_L1_S2
+mov goomba1Y, al
+mov goomba1Active, 1
+mov goomba1Dir, 1
+
+mov al, goomba2X_L1_S2
+mov goomba2X, al
+mov al, goomba2Y_L1_S2
+mov goomba2Y, al
+mov goomba2Active, 1
+mov goomba2Dir, -1
+
+mov al, goomba3X_L1_S2
+mov goomba3X, al
+mov al, goomba3Y_L1_S2
+mov goomba3Y, al
+mov goomba3Active, 1
+mov goomba3Dir, 1
+
+mov al, koopaX_L1_S2
+mov koopaX, al
+mov al, koopaY_L1_S2
+mov koopaY, al
+mov koopaActive, 1
+mov koopaShell, 0
+mov koopaDir, -1
+
+; No flag on screen 2
+mov flagActive, 0
+jmp playExitSound
+
+reloadScreen3Data:
+; Screen 3 - restore Screen 3 layout
+mov esi, OFFSET coinX_L1_S3
+mov edi, OFFSET coinX
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET coinY_L1_S3
+mov edi, OFFSET coinY
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET platformX_L1_S3
+mov edi, OFFSET platformX
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformY_L1_S3
+mov edi, OFFSET platformY
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformWidth_L1_S3
+mov edi, OFFSET platformWidth
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET wallX_L1_S3
+mov edi, OFFSET wallX
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYTop_L1_S3
+mov edi, OFFSET wallYTop
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYBottom_L1_S3
+mov edi, OFFSET wallYBottom
+mov ecx, wallCount
+rep movsb
+
+; Screen 3 enemies
+mov al, goomba1X_L1_S3
+mov goomba1X, al
+mov al, goomba1Y_L1_S3
+mov goomba1Y, al
+mov goomba1Active, 1
+mov goomba1Dir, 1
+
+mov al, goomba2X_L1_S3
+mov goomba2X, al
+mov al, goomba2Y_L1_S3
+mov goomba2Y, al
+mov goomba2Active, 1
+mov goomba2Dir, -1
+
+mov al, goomba3X_L1_S3
+mov goomba3X, al
+mov al, goomba3Y_L1_S3
+mov goomba3Y, al
+mov goomba3Active, 1
+mov goomba3Dir, 1
+
+mov al, koopaX_L1_S3
+mov koopaX, al
+mov al, koopaY_L1_S3
+mov koopaY, al
+mov koopaActive, 1
+mov koopaShell, 0
+mov koopaDir, -1
+
+; FLAG IS ON SCREEN 3!
+mov al, flagX_L1_S3
+mov flagX, al
+mov al, flagY_L1_S3
+mov flagY, al
+mov flagActive, 1
+
+playExitSound:
+; Coins keep their collected state - don't reset
+
+; Play exit sound
+push eax
+push ebx
+mov eax, SOUND_LEVEL_COMPLETE
+mov ebx, DURATION_MEDIUM
+call PlaySound
+pop ebx
+pop eax
+
+popad
+ret
+ExitBonusRoom ENDP
+
+UpdateBonusRoomTimer PROC
+pushad
+
+; Only update if in bonus room
+cmp inBonusRoom, 0
+je noTimerUpdate
+
+; Update timer counter
+inc bonusRoomTimerCounter
+cmp bonusRoomTimerCounter, 10  ; 10 frames = 1 second
+jl noTimerUpdate
+
+mov bonusRoomTimerCounter, 0
+dec bonusRoomTimer
+
+; Check if time expired
+cmp bonusRoomTimer, 0
+jg noTimerUpdate
+
+; Time's up! Exit bonus room
+call ExitBonusRoom
+
+noTimerUpdate:
+popad
+ret
+UpdateBonusRoomTimer ENDP
+
+UpdatePhysics PROC
+cmp isJumping, 0
+je notFalling
+mov al, marioVelocityY
+add al, GRAVITY
+cmp al, 10
+jle velOk
+mov al, 10
+velOk:
+mov marioVelocityY, al
+notFalling :
+
+cmp isJumping, 0
+je noVerticalMove
+movsx ax, marioVelocityY
+movsx bx, marioY
+add bx, ax
+cmp bx, 0
+jge yNotNeg
+xor bx, bx
+yNotNeg :
+cmp bx, GROUND_LEVEL + 5
+jle yNotOver
+mov bx, GROUND_LEVEL
+yNotOver :
+mov marioY, bl
+noVerticalMove :
+
+call CheckWallCollision
+call CheckPlatformLanding
+
+mov al, marioY
+cmp al, GROUND_LEVEL
+jb notOnFloor
+mov marioY, GROUND_LEVEL
+mov isJumping, 0
+mov marioVelocityY, 0
+mov jumpCount, 0
+mov canDoubleJump, 1
+notOnFloor:
+
+; Check for screen scrolling (only for Level 1)
+mov al, level
+cmp al, 1
+jne skipScreenScrolling
+
+; Check if Mario reached the right edge
+cmp marioX, SCREEN_WIDTH - 3
+jl checkLeftEdge
+call ScrollToNextScreen
+jmp skipScreenScrolling
+
+checkLeftEdge :
+; Check if Mario reached the left edge
+cmp marioX, 2
+jg skipScreenScrolling
+call ScrollToPreviousScreen
+
+skipScreenScrolling :
+
+cmp marioX, 2
+jg xOk1
+mov marioX, 2
+xOk1 :
+    cmp marioX, SCREEN_WIDTH - 3
+    jl xOk2
+    mov marioX, SCREEN_WIDTH - 3
+    xOk2 :
+    ret
+    UpdatePhysics ENDP
+
+    CheckPlatformLanding PROC
+    pushad
+
+    mov ecx, platformCount
+    xor esi, esi
+    xor dl, dl
+
+    platLoop :
+test ecx, ecx
+jz checkGroundFall
+
+mov al, marioX
+mov bl, platformX[esi]
+dec bl
+cmp al, bl
+jb nextPlat
+mov bl, platformX[esi]
+add bl, platformWidth[esi]
+inc bl
+cmp al, bl
+jae nextPlat
+
+mov al, marioY
+mov bl, platformY[esi]
+cmp al, bl
+je onPlatform
+inc bl
+cmp al, bl
+jne nextPlat
+
+onPlatform :
+mov al, platformY[esi]
+mov marioY, al
+mov isJumping, 0
+mov marioVelocityY, 0
+mov jumpCount, 0
+mov canDoubleJump, 1
+mov dl, 1
+jmp platDone
+
+nextPlat :
+inc esi
+dec ecx
+jmp platLoop
+
+checkGroundFall :
+test dl, dl
+jnz platDone
+
+mov al, marioY
+cmp al, GROUND_LEVEL
+jae platDone
+
+cmp isJumping, 0
+jne platDone
+
+cmp marioVelocityY, 0
+jl platDone
+
+mov isJumping, 1
+mov marioVelocityY, 0
+
+platDone:
+popad
+ret
+CheckPlatformLanding ENDP
+
+CheckWallCollision PROC
+pushad
+
+mov ecx, wallCount
+xor esi, esi
+wallLoop2 :
+test ecx, ecx
+jz wallDone2
+
+mov al, marioX
+mov bl, wallX[esi]
+
+cmp al, bl
+je hitWall
+mov dl, bl
+dec dl
+cmp al, dl
+jne nextWall
+
+hitWall :
+mov al, marioY
+mov bl, wallYTop[esi]
+cmp al, bl
+jb nextWall
+mov bl, wallYBottom[esi]
+cmp al, bl
+ja nextWall
+
+mov al, wallX[esi]
+sub al, 2
+mov marioX, al
+jmp wallDone2
+
+nextWall :
+inc esi
+dec ecx
+jmp wallLoop2
+wallDone2 :
+popad
+ret
+CheckWallCollision ENDP
+
+UpdateGame PROC
+call UpdateEnemies
+call UpdateBoss
+call UpdateProjectiles
+call CheckCollisions
+call CheckLevelComplete
+call UpdateBonusRoomTimer
+
+inc timerCounter
+cmp timerCounter, 10
+jl timerSkip
+mov timerCounter, 0
+
+; Check if in bonus room - don't decrease main timer
+cmp inBonusRoom, 1
+je timerSkip
+
+dec timeLeft
+cmp timeLeft, 0
+jg timerSkip
+call PlayerDie
+timerSkip :
+
+cmp hasSpringPower, 1
+jne noSpring
+dec springTimer
+cmp springTimer, 0
+jg noSpring
+mov hasSpringPower, 0
+noSpring:
+ret
+UpdateGame ENDP
+
+UpdateBoss PROC
+pushad
+
+cmp bossActive, 0
+je bossUpdateDone
+
+; Check if boss is defeated
+cmp bossHealth, 0
+jle bossUpdateDone
+
+cmp bossStunTimer, 0
+je notStunned
+dec bossStunTimer
+cmp bossStunTimer, 0
+jne bossUpdateDone
+mov bossVulnerable, 0
+jmp bossUpdateDone
+
+notStunned :
+mov al, bossDir
+add bossX, al
+cmp bossX, 70
+jle bossDirChange
+cmp bossX, 115
+jge bossDirChange
+jmp bossAttackLogic
+
+bossDirChange :
+mov al, bossDir
+neg al
+mov bossDir, al
+
+bossAttackLogic :
+cmp bossAttackTimer, 0
+je canAttack
+dec bossAttackTimer
+jmp bossUpdateDone
+
+canAttack :
+call BossFireProjectile
+mov al, bossAttackCooldown
+cmp bossHealth, 3
+jg normalSpeed
+shr al, 1
+normalSpeed :
+    mov bossAttackTimer, al
+
+    bossUpdateDone :
+popad
+ret
+UpdateBoss ENDP
+
+BossFireProjectile PROC
+pushad
+
+mov ecx, projectileCount
+xor esi, esi
+findFreeProj :
+cmp ecx, 0
+je noFreeProj
+cmp projectileActive[esi], 0
+je foundFree
+inc esi
+dec ecx
+jmp findFreeProj
+
+foundFree :
+mov al, bossX
+mov projectileX[esi], al
+mov al, bossY
+sub al, 2
+mov projectileY[esi], al
+mov projectileActive[esi], 1
+mov al, -2
+mov projectileDir[esi], al
+
+noFreeProj :
+popad
+ret
+BossFireProjectile ENDP
+
+UpdateProjectiles PROC
+pushad
+
+mov ecx, projectileCount
+xor esi, esi
+projLoop :
+cmp ecx, 0
+je projDone
+cmp projectileActive[esi], 0
+je projSkip
+
+mov al, projectileDir[esi]
+add projectileX[esi], al
+
+mov al, projectileX[esi]
+cmp al, 2
+jl deactivateProj
+cmp al, SCREEN_WIDTH - 3
+jg deactivateProj
+jmp projSkip
+
+deactivateProj :
+mov projectileActive[esi], 0
+
+projSkip :
+    inc esi
+    dec ecx
+    jmp projLoop
+
+    projDone :
+popad
+ret
+UpdateProjectiles ENDP
+
+UpdateEnemies PROC
+; Update Goomba 1
+cmp goomba1Active, 1
+jne checkGoomba2
+mov al, goomba1Dir
+add goomba1X, al
+cmp goomba1X, 20
+jle g1Dir
+cmp goomba1X, 90
+jge g1Dir
+jmp checkGoomba2
+g1Dir :
+mov al, goomba1Dir
+neg al
+mov goomba1Dir, al
+
+checkGoomba2:
+; Update Goomba 2
+cmp goomba2Active, 1
+jne checkGoomba3
+mov al, goomba2Dir
+add goomba2X, al
+cmp goomba2X, 15
+jle g2Dir
+cmp goomba2X, 40
+jge g2Dir
+jmp checkGoomba3
+g2Dir :
+mov al, goomba2Dir
+neg al
+mov goomba2Dir, al
+
+checkGoomba3:
+; Update Goomba 3
+cmp goomba3Active, 1
+jne checkKoopaUpdate
+mov al, goomba3Dir
+add goomba3X, al
+cmp goomba3X, 75
+jle g3Dir
+cmp goomba3X, 100
+jge g3Dir
+jmp checkKoopaUpdate
+g3Dir :
+mov al, goomba3Dir
+neg al
+mov goomba3Dir, al
+
+checkKoopaUpdate :
+; Update Koopa Troopa
+cmp koopaActive, 1
+jne updEnemiesEnd
+
+cmp koopaShell, 1
+je shellMode
+
+; Normal Koopa movement
+mov al, koopaDir
+add koopaX, al
+cmp koopaX, 20
+jle kDirChange
+cmp koopaX, 90
+jge kDirChange
+jmp updEnemiesEnd
+
+kDirChange :
+mov al, koopaDir
+neg al
+mov koopaDir, al
+jmp updEnemiesEnd
+
+shellMode :
+; Moving shell - keep moving in current direction
+mov al, koopaDir
+add koopaX, al
+
+; Check shell boundaries and deactivate if out of bounds
+cmp koopaX, 2
+jl deactivateShell
+cmp koopaX, SCREEN_WIDTH - 3
+jg deactivateShell
+
+; Check for collisions with other enemies while shell is moving
+call CheckShellEnemyCollisions
+jmp updEnemiesEnd
+
+deactivateShell :
+mov koopaActive, 0
+
+updEnemiesEnd :
+    ret
+    UpdateEnemies ENDP
+
+    CheckCollisions PROC
+        call CheckCoinCollisions
+        call CheckPowerUpCollisions
+        call CheckStarCollision
+        call CheckEnemyCollisions
+        call CheckBossCollisions
+        call CheckProjectileCollisions
+        ret
+    CheckCollisions ENDP
+
+    CheckCoinCollisions PROC
+    pushad
+
+    mov ecx, coinCount
+    xor esi, esi
+    ccLoop :
+test ecx, ecx
+jz ccDone
+cmp coinActive[esi], 1
+jne ccSkip
+
+mov al, marioX
+mov bl, coinX[esi]
+sub al, bl
+cmp al, 0
+jge xPosDiff
+neg al
+xPosDiff :
+cmp al, 1
+jg ccSkip
+
+mov al, marioY
+mov bl, coinY[esi]
+sub al, bl
+cmp al, 0
+jge yPosDiff
+neg al
+yPosDiff :
+cmp al, 1
+jg ccSkip
+
+mov coinActive[esi], 0
+inc coins
+add score, 200
+
+; Play coin collection sound
+push eax
+push ebx
+mov eax, SOUND_COIN
+mov ebx, DURATION_SHORT
+call PlaySound
+pop ebx
+pop eax
+
+ccSkip :
+inc esi
+dec ecx
+jmp ccLoop
+ccDone :
+popad
+ret
+CheckCoinCollisions ENDP
+
+CheckPowerUpCollisions PROC
+pushad
+
+cmp springActive, 1
+jne pSkip
+
+mov al, marioX
+mov bl, springMushroomX
+sub al, bl
+cmp al, 0
+jge xPosDiff2
+neg al
+xPosDiff2 :
+cmp al, 2
+jg pSkip
+
+mov al, marioY
+mov bl, springMushroomY
+sub al, bl
+cmp al, 0
+jge yPosDiff2
+neg al
+yPosDiff2 :
+cmp al, 2
+jg pSkip
+
+mov springActive, 0
+mov hasSpringPower, 1
+mov springTimer, 100
+add score, 1000
+
+; Play power-up collection sound
+push eax
+push ebx
+mov eax, SOUND_POWERUP
+mov ebx, DURATION_LONG
+call PlaySound
+pop ebx
+pop eax
+
+pSkip :
+popad
+ret
+CheckPowerUpCollisions ENDP
+
+CheckStarCollision PROC
+pushad
+
+cmp starActive, 1
+jne starSkip
+
+mov al, marioX
+mov bl, starX
+sub al, bl
+cmp al, 0
+jge starXPosDiff
+neg al
+starXPosDiff :
+cmp al, 2
+jg starSkip
+
+mov al, marioY
+mov bl, starY
+sub al, bl
+cmp al, 0
+jge starYPosDiff
+neg al
+starYPosDiff :
+cmp al, 2
+jg starSkip
+
+; Star collected - add 3 seconds to timer
+mov starActive, 0
+mov eax, timeLeft
+add eax, 3
+mov timeLeft, eax
+add score, 500
+
+; Play star collection sound
+push eax
+push ebx
+mov eax, SOUND_POWERUP
+add eax, 300            ; Higher pitch for star
+mov ebx, DURATION_LONG
+call PlaySound
+pop ebx
+pop eax
+
+starSkip :
+popad
+ret
+CheckStarCollision ENDP
+
+CheckShellEnemyCollisions PROC
+pushad
+
+; Check collision with Goomba 1
+cmp goomba1Active, 1
+jne checkGoomba2Shell
+
+mov al, koopaX
+mov bl, goomba1X
+sub al, bl
+cmp al, 0
+jge shell1XPosDiff
+neg al
+shell1XPosDiff :
+cmp al, 1
+jg checkGoomba2Shell
+
+mov al, koopaY
+mov bl, goomba1Y
+sub al, bl
+cmp al, 0
+jge shell1YPosDiff
+neg al
+shell1YPosDiff :
+cmp al, 1
+jg checkGoomba2Shell
+
+; Shell hit Goomba 1
+mov goomba1Active, 0
+add score, 200
+
+push eax
+push ebx
+mov eax, SOUND_ENEMY_DEFEAT
+mov ebx, DURATION_MEDIUM
+call PlaySound
+pop ebx
+pop eax
+
+checkGoomba2Shell:
+; Check collision with Goomba 2
+cmp goomba2Active, 1
+jne checkGoomba3Shell
+
+mov al, koopaX
+mov bl, goomba2X
+sub al, bl
+cmp al, 0
+jge shell2XPosDiff
+neg al
+shell2XPosDiff :
+cmp al, 1
+jg checkGoomba3Shell
+
+mov al, koopaY
+mov bl, goomba2Y
+sub al, bl
+cmp al, 0
+jge shell2YPosDiff
+neg al
+shell2YPosDiff :
+cmp al, 1
+jg checkGoomba3Shell
+
+; Shell hit Goomba 2
+mov goomba2Active, 0
+add score, 200
+
+push eax
+push ebx
+mov eax, SOUND_ENEMY_DEFEAT
+mov ebx, DURATION_MEDIUM
+call PlaySound
+pop ebx
+pop eax
+
+checkGoomba3Shell:
+; Check collision with Goomba 3
+cmp goomba3Active, 1
+jne shellCollisionDone
+
+mov al, koopaX
+mov bl, goomba3X
+sub al, bl
+cmp al, 0
+jge shell3XPosDiff
+neg al
+shell3XPosDiff :
+cmp al, 1
+jg shellCollisionDone
+
+mov al, koopaY
+mov bl, goomba3Y
+sub al, bl
+cmp al, 0
+jge shell3YPosDiff
+neg al
+shell3YPosDiff :
+cmp al, 1
+jg shellCollisionDone
+
+; Shell hit Goomba 3
+mov goomba3Active, 0
+add score, 200
+
+push eax
+push ebx
+mov eax, SOUND_ENEMY_DEFEAT
+mov ebx, DURATION_MEDIUM
+call PlaySound
+pop ebx
+pop eax
+
+shellCollisionDone :
+popad
+ret
+CheckShellEnemyCollisions ENDP
+
+CheckEnemyCollisions PROC
+    pushad
+
+    ; ================== GOOMBA 1 COLLISION ==================
+    cmp goomba1Active, 1
+    jne checkGoomba2Collision
+
+    ; Check X collision - NOW 2 CHARS WIDE LIKE BOSS
+    mov al, marioX
+    mov bl, goomba1X
+    sub al, bl
+    cmp al, 0
+    jge xDiffG1
+    neg al
+xDiffG1:
+    cmp al, 2  ; Changed from 1 to 2 (2-char wide)
+    jg checkGoomba2Collision
+
+    ; Check Y collision - WIDER RANGE LIKE BOSS
+    mov al, marioY
+    mov bl, goomba1Y
+    sub al, bl
+    cmp al, 0
+    jge yDiffG1
+    neg al
+yDiffG1:
+    cmp al, 3  ; Changed from 1 to 3 (to allow stomp detection)
+    jg checkGoomba2Collision
+
+    ; ========== EXACT SAME AS BOSS NOW ==========
+    mov al, marioY
+    mov bl, goomba1Y
+    sub al, bl
+    cmp al, 0
+    jge yDistG1
+    neg al
+yDistG1:
+    
+    ; EXACT BOSS LOGIC: distance 2 or 3 = stomp
+    cmp al, 2
+    je checkVelocityGoomba1
+    cmp al, 3
+    je checkVelocityGoomba1
+    
+    cmp al, 1
+    jle goomba1SideCollisionFinal
+    jmp checkGoomba2Collision
+
+checkVelocityGoomba1:
+    ; Check if falling (like boss)
+    cmp marioVelocityY, 0
+    jl goomba1SideCollisionFinal
+    
+    ; STOMP GOOMBA 1
+    mov goomba1Active, 0
+    add score, 100
+    
+    push eax
+    push ebx
+    mov eax, SOUND_ENEMY_DEFEAT
+    mov ebx, DURATION_MEDIUM
+    call PlaySound
+    pop ebx
+    pop eax
+    
+    ; Bounce
+    mov al, JUMP_STRENGTH
+    neg al
+    mov marioVelocityY, al
+    mov isJumping, 1
+    jmp enemyCollisionsDone
+
+goomba1SideCollisionFinal:
+    call PlayerDie
+    jmp enemyCollisionsDone
+
+    ; ================== GOOMBA 2 COLLISION ==================
+checkGoomba2Collision:
+    cmp goomba2Active, 1
+    jne checkGoomba3Collision
+
+    mov al, marioX
+    mov bl, goomba2X
+    sub al, bl
+    cmp al, 0
+    jge xDiffG2
+    neg al
+xDiffG2:
+    cmp al, 2
+    jg checkGoomba3Collision
+
+    mov al, marioY
+    mov bl, goomba2Y
+    sub al, bl
+    cmp al, 0
+    jge yDiffG2
+    neg al
+yDiffG2:
+    cmp al, 3
+    jg checkGoomba3Collision
+
+    mov al, marioY
+    mov bl, goomba2Y
+    sub al, bl
+    cmp al, 0
+    jge yDistG2
+    neg al
+yDistG2:
+    
+    cmp al, 2
+    je checkVelocityGoomba2
+    cmp al, 3
+    je checkVelocityGoomba2
+    
+    cmp al, 1
+    jle goomba2SideCollisionFinal
+    jmp checkGoomba3Collision
+
+checkVelocityGoomba2:
+    cmp marioVelocityY, 0
+    jl goomba2SideCollisionFinal
+    
+    mov goomba2Active, 0
+    add score, 100
+    
+    push eax
+    push ebx
+    mov eax, SOUND_ENEMY_DEFEAT
+    mov ebx, DURATION_MEDIUM
+    call PlaySound
+    pop ebx
+    pop eax
+    
+    mov al, JUMP_STRENGTH
+    neg al
+    mov marioVelocityY, al
+    mov isJumping, 1
+    jmp enemyCollisionsDone
+
+goomba2SideCollisionFinal:
+    call PlayerDie
+    jmp enemyCollisionsDone
+
+    ; ================== GOOMBA 3 COLLISION ==================
+checkGoomba3Collision:
+    cmp goomba3Active, 1
+    jne checkKoopaCollision
+
+    mov al, marioX
+    mov bl, goomba3X
+    sub al, bl
+    cmp al, 0
+    jge xDiffG3
+    neg al
+xDiffG3:
+    cmp al, 2
+    jg checkKoopaCollision
+
+    mov al, marioY
+    mov bl, goomba3Y
+    sub al, bl
+    cmp al, 0
+    jge yDiffG3
+    neg al
+yDiffG3:
+    cmp al, 3
+    jg checkKoopaCollision
+
+    mov al, marioY
+    mov bl, goomba3Y
+    sub al, bl
+    cmp al, 0
+    jge yDistG3
+    neg al
+yDistG3:
+    
+    cmp al, 2
+    je checkVelocityGoomba3
+    cmp al, 3
+    je checkVelocityGoomba3
+    
+    cmp al, 1
+    jle goomba3SideCollisionFinal
+    jmp checkKoopaCollision
+
+checkVelocityGoomba3:
+    cmp marioVelocityY, 0
+    jl goomba3SideCollisionFinal
+    
+    mov goomba3Active, 0
+    add score, 100
+    
+    push eax
+    push ebx
+    mov eax, SOUND_ENEMY_DEFEAT
+    mov ebx, DURATION_MEDIUM
+    call PlaySound
+    pop ebx
+    pop eax
+    
+    mov al, JUMP_STRENGTH
+    neg al
+    mov marioVelocityY, al
+    mov isJumping, 1
+    jmp enemyCollisionsDone
+
+goomba3SideCollisionFinal:
+    call PlayerDie
+    jmp enemyCollisionsDone
+
+    ; ================== KOOPA COLLISION ==================
+checkKoopaCollision:
+    cmp koopaActive, 1
+    jne enemyCollisionsDone
+
+    ; Check X collision - NOW 2 CHARS WIDE LIKE BOSS
+    mov al, marioX
+    mov bl, koopaX
+    sub al, bl
+    cmp al, 0
+    jge xDiffKoopa1
+    neg al
+xDiffKoopa1:
+    cmp al, 2  ; Changed from 1 to 2 (2-char wide)
+    jg enemyCollisionsDone
+
+    ; Check Y collision - WIDER RANGE LIKE BOSS
+    mov al, marioY
+    mov bl, koopaY
+    sub al, bl
+    cmp al, 0
+    jge yDiffKoopa1
+    neg al
+yDiffKoopa1:
+    cmp al, 3  ; Changed from 1 to 3 (to allow stomp detection)
+    jg enemyCollisionsDone
+
+    cmp koopaShell, 1
+    je koopaShellCollision
+
+    ; ========== EXACT SAME AS BOSS NOW ==========
+    mov al, marioY
+    mov bl, koopaY
+    sub al, bl
+    cmp al, 0
+    jge yDistKoopa
+    neg al
+yDistKoopa:
+    
+    cmp al, 2
+    je checkVelocityKoopa
+    cmp al, 3
+    je checkVelocityKoopa
+    
+    cmp al, 1
+    jle koopaSideCollision
+    jmp enemyCollisionsDone
+
+checkVelocityKoopa:
+    cmp marioVelocityY, 0
+    jl koopaSideCollision
+
+    ; Mario stomped Koopa from above!
+    mov koopaShell, 1
+    mov shellTimer, 100
+    add score, 500
+    
+    ; Play enemy defeat sound
+    push eax
+    push ebx
+    mov eax, SOUND_ENEMY_DEFEAT
+    mov ebx, DURATION_MEDIUM
+    call PlaySound
+    pop ebx
+    pop eax
+    
+    ; Determine shell direction based on Mario's position
+    mov al, marioX
+    cmp al, koopaX
+    jl marioLeftOfKoopaStomp
+    ; Mario right of Koopa - shell goes left
+    mov koopaDir, -2
+    jmp koopaStompComplete
+marioLeftOfKoopaStomp:
+    ; Mario left of Koopa - shell goes right
+    mov koopaDir, 2
+    
+koopaStompComplete:
+    ; Bounce Mario
+    mov al, JUMP_STRENGTH
+    neg al
+    mov marioVelocityY, al
+    mov isJumping, 1
+    jmp enemyCollisionsDone
+
+koopaSideCollision:
+    ; Mario hit Koopa from side/below
+    call PlayerDie
+    jmp enemyCollisionsDone
+
+koopaShellCollision:
+    ; Collision with Koopa shell
+    cmp koopaDir, 0
+    je stationaryShellKick
+    
+    cmp koopaDir, 2
+    je movingShellHit
+    cmp koopaDir, -2
+    je movingShellHit
+    jmp stationaryShellKick
+
+movingShellHit:
+    ; Mario hit moving shell - Mario takes damage
+    call PlayerDie
+    jmp enemyCollisionsDone
+
+stationaryShellKick:
+    ; Mario kicks stationary shell
+    cmp marioVelocityY, 0
+    jl kickShellUp  ; If jumping up, don't kick
+    
+    mov al, marioX
+    cmp al, koopaX
+    jl kickShellRight
+    ; Mario right of shell - kick left
+    mov koopaDir, -2
+    jmp enemyCollisionsDone
+kickShellRight:
+    ; Mario left of shell - kick right
+    mov koopaDir, 2
+    jmp enemyCollisionsDone
+    
+kickShellUp:
+    ; Mario jumping into shell from below - just bounce
+    mov al, JUMP_STRENGTH
+    neg al
+    mov marioVelocityY, al
+    mov isJumping, 1
+
+enemyCollisionsDone:
+    popad
+    ret
+CheckEnemyCollisions ENDP
+
+CheckFlagCollision PROC
+pushad
+
+cmp flagActive, 1
+jne flagCollisionDone
+
+; Check if Mario is close to the flag
+mov al, marioX
+mov bl, flagX
+sub al, bl
+cmp al, 0
+jge flagXPosDiff
+neg al
+flagXPosDiff :
+cmp al, 2; Increased range for flag collision
+jg flagCollisionDone
+
+mov al, marioY
+mov bl, flagY
+sub al, bl
+cmp al, 0
+jge flagYPosDiff
+neg al
+flagYPosDiff :
+cmp al, 10; Check entire flag pole height
+jg flagCollisionDone
+
+; Flag collision detected - complete level
+call ShowLevelComplete
+
+flagCollisionDone :
+popad
+ret
+CheckFlagCollision ENDP
+
+CheckBossCollisions PROC
+pushad
+
+cmp bossActive, 0
+je bossColDone
+
+; Check if boss is already defeated (health = 0)
+cmp bossHealth, 0
+jle bossColDone
+
+mov al, marioX
+mov bl, bossX
+sub al, bl
+cmp al, 0
+jge xPosDiffBoss
+neg al
+xPosDiffBoss :
+cmp al, 3
+jg bossColDone
+
+mov al, marioY
+mov bl, bossY
+sub al, bl
+cmp al, 0
+jge yPosDiffBoss
+neg al
+yPosDiffBoss :
+
+cmp al, 2
+je jumpedOnBoss
+cmp al, 3
+je jumpedOnBoss
+
+cmp al, 1
+jle bossDamagesMario
+jmp bossColDone
+
+jumpedOnBoss :
+cmp marioVelocityY, 0
+jl bossColDone
+
+mov bossVulnerable, 1
+mov bossStunTimer, 20
+dec bossHealth
+add score, 1000
+
+; Play boss hit sound
+push eax
+push ebx
+mov eax, SOUND_BOSS_HIT
+mov ebx, DURATION_MEDIUM
+call PlaySound
+pop ebx
+pop eax
+
+mov al, JUMP_STRENGTH
+neg al
+mov marioVelocityY, al
+mov isJumping, 1
+
+cmp bossHealth, 3
+jne checkDefeat
+call ShowPhase2Warning
+
+checkDefeat :
+cmp bossHealth, 0
+jg bossColDone
+
+; Boss defeated!
+mov bossActive, 0
+call ShowBossDefeated
+jmp bossColDone
+
+bossDamagesMario :
+cmp bossStunTimer, 0
+jg bossColDone
+call PlayerDie
+
+bossColDone :
+popad
+ret
+CheckBossCollisions ENDP
+
+CheckProjectileCollisions PROC
+pushad
+
+mov ecx, projectileCount
+xor esi, esi
+projColLoop :
+cmp ecx, 0
+je projColDone
+cmp projectileActive[esi], 0
+je projColSkip
+
+mov al, marioX
+mov bl, projectileX[esi]
+sub al, bl
+cmp al, 0
+jge xPosDiffProj
+neg al
+xPosDiffProj :
+cmp al, 1
+jg projColSkip
+
+mov al, marioY
+mov bl, projectileY[esi]
+sub al, bl
+cmp al, 0
+jge yPosDiffProj
+neg al
+yPosDiffProj :
+cmp al, 1
+jg projColSkip
+
+mov projectileActive[esi], 0
+call PlayerDie
+jmp projColDone
+
+projColSkip :
+inc esi
+dec ecx
+jmp projColLoop
+
+projColDone :
+popad
+ret
+CheckProjectileCollisions ENDP
+
+CheckLevelComplete PROC
+pushad
+
+mov al, level
+cmp al, 4
+je normalLevelCheck; Boss level still uses coin collection
+
+; For levels 1 - 3, only flag completion matters(handled in CheckFlagCollision)
+; Remove coin - based completion for these levels
+jmp notComplete
+
+normalLevelCheck :
+; Original coin collection logic for boss level
+xor bl, bl
+mov ecx, coinCount
+xor esi, esi
+countLoop :
+test ecx, ecx
+jz checkCount
+mov al, coinActive[esi]
+add bl, al
+inc esi
+dec ecx
+jmp countLoop
+
+checkCount :
+test bl, bl
+jnz notComplete
+
+call ShowLevelComplete
+
+notComplete :
+completeChecked:
+popad
+ret
+CheckLevelComplete ENDP
+ShowBossDefeated PROC
+    call Clrscr
+    mov eax, BOSS_ATTR
+    call SetTextColor
+    
+    ; Play boss defeated sound sequence
+    push eax
+    push ebx
+    mov eax, SOUND_LEVEL_COMPLETE
+    mov ebx, DURATION_LONG
+    call PlaySound
+    mov eax, 150
+    call Delay
+    mov eax, SOUND_LEVEL_COMPLETE
+    add eax, 200
+    mov ebx, DURATION_LONG
+    call PlaySound
+    mov eax, 150
+    call Delay
+    mov eax, SOUND_LEVEL_COMPLETE
+    add eax, 400
+    mov ebx, DURATION_LONG
+    call PlaySound
+    pop ebx
+    pop eax
+    
+    mWriteString 48, 8, strBossDefeated
+    
+    ; ========== PRINCESS RESCUE MESSAGE ==========
+    mWriteString 42, 10, strPrincessBorder
+    mWriteString 42, 11, strPrincessEmpty
+    mWriteString 42, 12, strPrincessRescued
+    mWriteString 42, 13, strPrincessEmpty
+    mWriteString 42, 14, strPrincessBorder
+    
+    mWriteString 44, 16, strThankMario
+    mWriteString 40, 17, strQuestOver
+    ; =============================================
+    
+    mWriteString 45, 19, strScore
+    mov dl, 52
+    mov dh, 19
+    call Gotoxy
+    mov eax, score
+    call WriteDec
+    
+    ; Add boss defeat bonus
+    add score, 5000
+    
+    ; Show bonus added
+    mWriteString 45, 21, strBossBonus
+    
+    ; Show total score
+    mWriteString 45, 23, strTotalScore
+    mov dl, 59
+    mov dh, 23
+    call Gotoxy
+    mov eax, score
+    call WriteDec
+    
+    mov dl, 42
+    mov dh, 25
+    call Gotoxy
+    mov edx, OFFSET strAllComplete
+    call WriteString
+    
+    ; Final victory message
+    mWriteString 44, 27, strHeroMsg
+    
+    mWriteString 40, 29, strPressContinue
+    
+    mov eax, 3000
+    call Delay
+    
+    ; Wait for key press
+    call ReadChar
+    
+    mov gameActive, 0
+    ret
+ShowBossDefeated ENDP
+
+DrawHighscores PROC
+pushad
+
+cmp existingScoresLen, 0
+je noScores
+
+mov edx, OFFSET existingScores
+mov ecx, existingScoresLen
+call ReadString
+
+mov edx, OFFSET strHighestScore
+call WriteString
+
+mov eax, score
+call WriteDec
+
+mov edx, OFFSET strNoScores
+call WriteString
+
+noScores :
+popad
+ret
+DrawHighscores ENDP
+
+ShowLevelComplete PROC
+    call Clrscr
+    
+    ; Play level complete sound
+    push eax
+    push ebx
+    mov eax, SOUND_LEVEL_COMPLETE
+    mov ebx, DURATION_LONG
+    call PlaySound
+    mov eax, 200
+    call Delay
+    mov eax, SOUND_LEVEL_COMPLETE
+    add eax, 300
+    mov ebx, DURATION_LONG
+    call PlaySound
+    pop ebx
+    pop eax
+    
+    mov eax, DEFAULT_ATTR
+    call SetTextColor
+    
+    ; ========== ADD TIME BONUS CALCULATION ==========
+    ; Calculate time bonus: timeLeft × 50
+    mov eax, timeLeft
+    imul eax, 50
+    mov ebx, eax  ; Save bonus in EBX
+    
+    ; Add bonus to score
+    add score, eax
+    ; ===============================================
+    
+    mWriteString 50, 10, strLevelComplete
+    
+    ; Display score
+    mWriteString 45, 12, strScore
+    mov dl, 52
+    mov dh, 12
+    call Gotoxy
+    mov eax, score
+    sub eax, ebx  ; Subtract bonus to show original score
+    call WriteDec
+    
+    ; ========== DISPLAY TIME BONUS ==========
+    mWriteString 45, 14, strTimeBonus
+    mov dl, 58
+    mov dh, 14
+    call Gotoxy
+    mov eax, ebx  ; Show the bonus amount
+    call WriteDec
+    
+    ; Show remaining time
+    mWriteString 45, 15, strTimeLeft
+    mov dl, 56
+    mov dh, 15
+    call Gotoxy
+    mov eax, timeLeft
+    call WriteDec
+    ; ========================================
+    
+    ; Show total score (with bonus)
+    mWriteString 45, 17, strTotalScore
+    mov dl, 59
+    mov dh, 17
+    call Gotoxy
+    mov eax, score
+    call WriteDec
+    
+    ; Add base level completion bonus
+    add score, 1000
+    
+    mov al, level
+    cmp al, 1
+    jne allLevelsComplete
+
+    ; After Level 1, go to Boss Level
+    mWriteString 42, 20, strNextLevel
+    call ReadChar
+    mov level, 4
+    mov screenVersion, 1
+    call LoadLevel
+    ret
+
+allLevelsComplete:
+    mov dl, 45
+    mov dh, 22
+    call Gotoxy
+    mov edx, OFFSET strAllComplete
+    call WriteString
+    mov eax, 3000
+    call Delay
+    mov gameActive, 0
+    ret
+ShowLevelComplete ENDP
+ScrollToNextScreen PROC
+pushad
+
+; Check current screen version
+mov al, screenVersion
+cmp al, 1
+je scrollToScreen2
+cmp al, 2
+je scrollToScreen3
+; Already on screen 3, don't scroll further
+jmp scrollDone
+
+scrollToScreen2:
+mov screenVersion, 2
+mov marioX, 3
+call LoadScreenVersion
+jmp scrollDone
+
+scrollToScreen3:
+mov screenVersion, 3
+mov marioX, 3
+call LoadScreenVersion
+
+scrollDone :
+popad
+ret
+ScrollToNextScreen ENDP
+
+ScrollToPreviousScreen PROC
+pushad
+
+; Check current screen version
+mov al, screenVersion
+cmp al, 2
+je scrollToScreen1
+cmp al, 3
+je scrollToScreen2FromS3
+; Already on screen 1, don't scroll further
+jmp scrollDone2
+
+scrollToScreen1:
+mov screenVersion, 1
+mov marioX, SCREEN_WIDTH - 4
+call LoadScreenVersion
+jmp scrollDone2
+
+scrollToScreen2FromS3:
+mov screenVersion, 2
+mov marioX, SCREEN_WIDTH - 4
+call LoadScreenVersion
+
+scrollDone2 :
+popad
+ret
+ScrollToPreviousScreen ENDP
+
+LoadScreenVersion PROC
+pushad
+
+mov al, level
+cmp al, 1
+jne loadScreenDone
+
+; Only Level 1 has multiple screens
+cmp screenVersion, 1
+je loadL1S1
+cmp screenVersion, 2
+je loadL1S2
+; Must be screen 3
+jmp loadL1S3
+
+loadL1S1 :
+; Load Level 1 Screen 1 (original data already in place from LoadLevel)
+; We need to reload from the base arrays
+; For simplicity, call LoadLevel to reset to screen 1
+jmp loadScreenDone
+
+loadL1S2 :
+; Load Level 1 Screen 2
+mov esi, OFFSET coinX_L1_S2
+mov edi, OFFSET coinX
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET coinY_L1_S2
+mov edi, OFFSET coinY
+mov ecx, coinCount
+rep movsb
+
+mov al, goomba1X_L1_S2
+mov goomba1X, al
+mov al, goomba1Y_L1_S2
+mov goomba1Y, al
+mov goomba1Active, 1
+mov goomba1Dir, 1
+
+mov al, goomba2X_L1_S2
+mov goomba2X, al
+mov al, goomba2Y_L1_S2
+mov goomba2Y, al
+mov goomba2Active, 1
+mov goomba2Dir, -1
+
+mov al, goomba3X_L1_S2
+mov goomba3X, al
+mov al, goomba3Y_L1_S2
+mov goomba3Y, al
+mov goomba3Active, 1
+mov goomba3Dir, 1
+
+mov al, koopaX_L1_S2
+mov koopaX, al
+mov al, koopaY_L1_S2
+mov koopaY, al
+mov koopaActive, 1
+mov koopaShell, 0
+mov koopaDir, -1
+
+mov esi, OFFSET platformX_L1_S2
+mov edi, OFFSET platformX
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformY_L1_S2
+mov edi, OFFSET platformY
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformWidth_L1_S2
+mov edi, OFFSET platformWidth
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET wallX_L1_S2
+mov edi, OFFSET wallX
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYTop_L1_S2
+mov edi, OFFSET wallYTop
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYBottom_L1_S2
+mov edi, OFFSET wallYBottom
+mov ecx, wallCount
+rep movsb
+
+mov al, springMushroomX_L1_S2
+mov springMushroomX, al
+mov al, springMushroomY_L1_S2
+mov springMushroomY, al
+
+mov al, starX_L1_S2
+mov starX, al
+mov al, starY_L1_S2
+mov starY, al
+mov starActive, 1
+
+; No flag on screen 2 - it's on screen 3
+mov flagActive, 0
+
+jmp resetCoinsScreen
+
+loadL1S3:
+; Load Level 1 Screen 3 - FINAL SCREEN WITH FLAG
+mov esi, OFFSET coinX_L1_S3
+mov edi, OFFSET coinX
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET coinY_L1_S3
+mov edi, OFFSET coinY
+mov ecx, coinCount
+rep movsb
+
+mov al, goomba1X_L1_S3
+mov goomba1X, al
+mov al, goomba1Y_L1_S3
+mov goomba1Y, al
+mov goomba1Active, 1
+mov goomba1Dir, 1
+
+mov al, goomba2X_L1_S3
+mov goomba2X, al
+mov al, goomba2Y_L1_S3
+mov goomba2Y, al
+mov goomba2Active, 1
+mov goomba2Dir, -1
+
+mov al, goomba3X_L1_S3
+mov goomba3X, al
+mov al, goomba3Y_L1_S3
+mov goomba3Y, al
+mov goomba3Active, 1
+mov goomba3Dir, 1
+
+mov al, koopaX_L1_S3
+mov koopaX, al
+mov al, koopaY_L1_S3
+mov koopaY, al
+mov koopaActive, 1
+mov koopaShell, 0
+mov koopaDir, -1
+
+mov esi, OFFSET platformX_L1_S3
+mov edi, OFFSET platformX
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformY_L1_S3
+mov edi, OFFSET platformY
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformWidth_L1_S3
+mov edi, OFFSET platformWidth
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET wallX_L1_S3
+mov edi, OFFSET wallX
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYTop_L1_S3
+mov edi, OFFSET wallYTop
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYBottom_L1_S3
+mov edi, OFFSET wallYBottom
+mov ecx, wallCount
+rep movsb
+
+mov al, springMushroomX_L1_S3
+mov springMushroomX, al
+mov al, springMushroomY_L1_S3
+mov springMushroomY, al
+mov springActive, 1
+
+mov al, starX_L1_S3
+mov starX, al
+mov al, starY_L1_S3
+mov starY, al
+mov starActive, 1
+
+; FLAG IS ON SCREEN 3!
+mov al, flagX_L1_S3
+mov flagX, al
+mov al, flagY_L1_S3
+mov flagY, al
+mov flagActive, 1
+
+jmp resetCoinsScreen
+
+resetCoinsScreen :
+; Reset coin active status
+mov ecx, coinCount
+xor esi, esi
+resetCoinLoopScreen :
+test ecx, ecx
+jz coinsResetDone
+mov coinActive[esi], 1
+inc esi
+dec ecx
+jmp resetCoinLoopScreen
+
+coinsResetDone :
+; REMOVED: Old flag loading code for screen 2
+; Screen 2 has no flag now
+
+loadScreenDone :
+    popad
+    ret
+    LoadScreenVersion ENDP
+
+    LoadLevel PROC
+    pushad
+    mov flagActive, 0
+    
+    ; Reset bonus room state
+    mov inBonusRoom, 0
+    mov bonusRoomActive, 1
+    mov bonusRoomTimer, 15
+
+    mov marioX, 10
+    mov marioY, GROUND_LEVEL
+    mov isJumping, 0
+    mov marioVelocityY, 0
+    mov jumpCount, 0
+    mov canDoubleJump, 1
+    mov coins, 0
+    mov timeLeft, 400
+    mov timerCounter, 0
+
+    mov hasSpringPower, 0
+    mov springActive, 1
+    mov starActive, 1
+
+    mov al, level
+    add al, 30h
+    mov worldStr[2], al
+
+    mov al, level
+    cmp al, 1
+    je loadLevel1_1
+    cmp al, 4
+    je loadLevel4
+    jmp resetCoins
+
+    loadLevel1_1 :
+mov flagActive, 0  ; No flag on screen 1 anymore
+mov esi, OFFSET coinX
+mov edi, OFFSET coinX
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET coinY
+mov edi, OFFSET coinY
+mov ecx, coinCount
+rep movsb
+
+mov al, goomba1X
+mov goomba1X, al
+mov al, goomba1Y
+mov goomba1Y, al
+mov goomba1Active, 1
+mov goomba1Dir, 1
+
+mov goomba2X, 25
+mov goomba2Y, GROUND_LEVEL
+mov goomba2Active, 1
+mov goomba2Dir, -1
+
+mov goomba3X, 85
+mov goomba3Y, GROUND_LEVEL
+mov goomba3Active, 1
+mov goomba3Dir, 1
+
+mov al, 70
+mov koopaX, al
+mov al, GROUND_LEVEL
+mov koopaY, al
+mov koopaActive, 1
+mov koopaShell, 0
+mov koopaDir, -1
+
+mov esi, OFFSET platformX
+mov edi, OFFSET platformX
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformY
+mov edi, OFFSET platformY
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformWidth
+mov edi, OFFSET platformWidth
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET wallX
+mov edi, OFFSET wallX
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYTop
+mov edi, OFFSET wallYTop
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYBottom
+mov edi, OFFSET wallYBottom
+mov ecx, wallCount
+rep movsb
+
+mov bossActive, 0
+jmp resetCoins
+
+loadLevel1_2 :
+; This is now unused but kept for reference
+; Level 1 Screen 2 loading is handled by LoadScreenVersion
+jmp resetCoins
+
+loadLevel4 :
+mov esi, OFFSET coinX_L4
+mov edi, OFFSET coinX
+mov ecx, coinCount
+rep movsb
+
+mov esi, OFFSET coinY_L4
+mov edi, OFFSET coinY
+mov ecx, coinCount
+rep movsb
+
+mov goomba1Active, 0
+mov koopaActive, 0
+
+mov esi, OFFSET platformX_L4
+mov edi, OFFSET platformX
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformY_L4
+mov edi, OFFSET platformY
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET platformWidth_L4
+mov edi, OFFSET platformWidth
+mov ecx, platformCount
+rep movsb
+
+mov esi, OFFSET wallX_L4
+mov edi, OFFSET wallX
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYTop_L4
+mov edi, OFFSET wallYTop
+mov ecx, wallCount
+rep movsb
+
+mov esi, OFFSET wallYBottom_L4
+mov edi, OFFSET wallYBottom
+mov ecx, wallCount
+rep movsb
+
+; Load star position for boss level
+mov al, starX_L4
+mov starX, al
+mov al, starY_L4
+mov starY, al
+mov starActive, 1
+
+mov bossX, 100
+mov bossY, GROUND_LEVEL
+mov bossHealth, 5
+mov bossActive, 1
+mov bossDir, -1
+mov bossAttackTimer, 30
+mov bossAttackCooldown, 30
+mov bossVulnerable, 0
+mov bossStunTimer, 0
+mov bossPhase, 1
+
+; REMOVED: Don't clear playerName - it's needed for saving scores!
+; The playerName was being cleared here which prevented score saving
+
+push eax
+push ecx
+push esi
+mov ecx, projectileCount
+xor esi, esi
+clearProjLoop :
+cmp ecx, 0
+je projCleared
+mov projectileActive[esi], 0
+inc esi
+dec ecx
+jmp clearProjLoop
+projCleared :
+pop esi
+pop ecx
+pop eax
+
+call ShowBossWarning
+
+mov springActive, 0
+mov timeLeft, 600
+jmp resetCoins
+
+resetCoins :
+mov ecx, coinCount
+xor esi, esi
+resetCoinLoop :
+test ecx, ecx
+jz loadDone
+mov coinActive[esi], 1
+inc esi
+dec ecx
+jmp resetCoinLoop
+
+loadDone :
+popad
+ret
+LoadLevel ENDP
+
+DrawFlag PROC
+pushad
+
+cmp flagActive, 1
+jne flagDrawDone
+
+; Draw flag pole
+mov dl, flagX
+mov dh, flagY
+call Gotoxy
+
+mov al, level
+cmp al, 1
+je drawLevel1Flag
+; Boss level - default flag
+mov eax, white + (blue * 16)
+call SetTextColor
+jmp drawFlagPole
+
+drawLevel1Flag :
+mov eax, white + (lightBlue * 16)
+call SetTextColor
+
+drawFlagPole :
+; Draw the pole(vertical line)
+mov ecx, 8
+mov dh, flagY
+flagPoleLoop :
+call Gotoxy
+mov al, '|'
+call WriteChar
+inc dh
+loop flagPoleLoop
+
+; Draw the flag
+mov dl, flagX
+mov dh, flagY
+call Gotoxy
+mov al, 30; Triangle character for flag
+call WriteChar
+
+; Reset color
+mov al, level
+cmp al, 1
+je resetLevel1FlagColor
+mov eax, DEFAULT_ATTR
+jmp flagDrawDone
+
+resetLevel1FlagColor :
+mov eax, LEVEL1_ATTR
+
+flagDrawDone :
+call SetTextColor
+popad
+ret
+DrawFlag ENDP
+
+ShowBossWarning PROC
+    pushad
+    call Clrscr
+    mov eax, BOSS_ATTR
+    call SetTextColor
+    mWriteString 48, 12, strBossWarning
+    mWriteString 40, 15, strPressAnyKey
+    call ReadChar
+    popad
+    ret
+ShowBossWarning ENDP
+
+DrawBoss PROC
+pushad
+
+cmp bossActive, 0
+je bossDrawDone
+
+mov dl, bossX
+mov dh, bossY
+call Gotoxy
+
+cmp bossVulnerable, 1
+je drawVulnerable
+mov eax, red + (black * 16)
+call SetTextColor
+jmp drawBossChar
+
+drawVulnerable :
+mov eax, yellow + (black * 16)
+call SetTextColor
+
+drawBossChar :
+mov al, 'B'
+call WriteChar
+
+mov dl, bossX
+inc dl
+mov dh, bossY
+call Gotoxy
+mov al, 'B'
+call WriteChar
+
+mov dl, bossX
+mov dh, bossY
+dec dh
+call Gotoxy
+mov al, '^'
+call WriteChar
+
+mov al, level
+cmp al, 4
+je setBossTextColor
+mov eax, DEFAULT_ATTR
+jmp resetColorDone
+setBossTextColor :
+mov eax, white + (black * 16)
+resetColorDone :
+    call SetTextColor
+
+    bossDrawDone :
+popad
+ret
+DrawBoss ENDP
+
+DrawProjectiles PROC
+pushad
+
+mov ecx, projectileCount
+xor esi, esi
+drawProjLoop :
+cmp ecx, 0
+je drawProjDone
+cmp projectileActive[esi], 0
+je drawProjSkip
+
+mov dl, projectileX[esi]
+mov dh, projectileY[esi]
+call Gotoxy
+mov eax, red + (black * 16)
+call SetTextColor
+mov al, '*'
+call WriteChar
+
+drawProjSkip :
+inc esi
+dec ecx
+jmp drawProjLoop
+
+drawProjDone :
+mov al, level
+cmp al, 4
+je setBossProjColor
+mov eax, DEFAULT_ATTR
+jmp resetProjColorDone
+setBossProjColor :
+mov eax, white + (black * 16)
+resetProjColorDone :
+    call SetTextColor
+
+    popad
+    ret
+    DrawProjectiles ENDP
+
+    ShowPhase2Warning PROC
+        pushad
+    mov dl, 48
+    mov dh, 15
+    call Gotoxy
+    mov eax, yellow + (red * 16)
+    call SetTextColor
+    mov edx, OFFSET strBossPhase2
+    call WriteString
+        mov eax, 800
+        call Delay
+        popad
+        ret
+    ShowPhase2Warning ENDP
+
+    PlayerDie PROC
+        dec lives
+        cmp lives, 0
+        jg respawn
+        call ShowGameOver
+        mov gameActive, 0
+        jmp diedDone
+
+    respawn:
+        call Clrscr
+        mov eax, DEFAULT_ATTR
+        call SetTextColor
+    mWriteString 48, 12, strYouDied
+    mWriteString 50, 14, strLife
+        mov dl, 56
+        mov dh, 14
+        call Gotoxy
+        movzx eax, lives
+        call WriteDec
+        mov eax, 2000
+        call Delay
+
+        mov marioX, 10
+        mov marioY, GROUND_LEVEL
+        mov isJumping, 0
+        mov marioVelocityY, 0
+        mov jumpCount, 0
+        mov canDoubleJump, 1
+
+        mov al, level
+        cmp al, 4
+        je skipKoopaReset
+        mov koopaActive, 1
+        mov koopaShell, 0
+        mov koopaDir, -1
+        mov koopaX, 70
+        mov koopaY, GROUND_LEVEL
+
+    skipKoopaReset:
+    diedDone:
+        ret
+    PlayerDie ENDP
+
+ShowGameOver PROC
+call Clrscr
+mov eax, DEFAULT_ATTR
+call SetTextColor
+
+; Play game over sound
+push eax
+push ebx
+mov eax, SOUND_GAME_OVER
+mov ebx, DURATION_LONG
+call PlaySound
+mov eax, 300
+call Delay
+pop ebx
+pop eax
+
+mov dl, 52
+mov dh, 10
+call Gotoxy
+mov edx, OFFSET strGameOver
+call WriteString
+
+mov dl, 48
+mov dh, 13
+call Gotoxy
+mov edx, OFFSET strScore
+call WriteString
+mov dl, 55
+call Gotoxy
+mov eax, score
+call WriteDec
+
+mov dl, 48
+mov dh, 15
+call Gotoxy
+mov edx, OFFSET strCoins
+call WriteString
+mov dl, 55
+call Gotoxy
+movzx eax, coins
+call WriteDec
+
+mov dl, 48
+mov dh, 17
+call Gotoxy
+mov edx, OFFSET strWorld
+call WriteString
+mov dl, 55
+call Gotoxy
+mov edx, OFFSET worldStr
+call WriteString
+
+mov dl, 42
+mov dh, 20
+call Gotoxy
+mov edx, OFFSET strRestart
+call WriteString
+
+waitForInput :
+call ReadChar
+
+cmp al, 'R'
+je restartGame
+cmp al, 'r'
+je restartGame
+
+cmp al, 'X'
+je exitGame
+cmp al, 'x'
+je exitGame
+
+jmp waitForInput
+
+restartGame :
+mov score, 0
+mov coins, 0
+mov lives, 3
+mov level, 1
+mov screenVersion, 1  ; RESET TO SCREEN 1 ON RESTART
+mov timeLeft, 400
+mov timerCounter, 0
+mov gameActive, 1
+
+mov worldStr[2], '1'
+
+mov marioX, 10
+mov marioY, GROUND_LEVEL
+mov isJumping, 0
+mov marioVelocityY, 0
+mov jumpCount, 0
+mov canDoubleJump, 1
+mov hasSpringPower, 0
+mov springActive, 1
+
+push eax
+push ecx
+push edi
+mov edi, OFFSET playerName
+mov ecx, 50
+xor al, al
+rep stosb
+mov nameLength, 0
+pop edi
+pop ecx
+pop eax
+
+push eax
+push ecx
+push esi
+mov ecx, coinCount
+xor esi, esi
+resetAllCoinsLoop :
+cmp ecx, 0
+je resetEnemiesNow
+mov coinActive[esi], 1
+inc esi
+dec ecx
+jmp resetAllCoinsLoop
+
+resetEnemiesNow :
+mov goomba1X, 45
+mov goomba1Y, GROUND_LEVEL
+mov goomba1Active, 1
+mov goomba1Dir, 1
+
+mov goomba2X, 25
+mov goomba2Y, GROUND_LEVEL
+mov goomba2Active, 1
+mov goomba2Dir, -1
+
+mov goomba3X, 85
+mov goomba3Y, GROUND_LEVEL
+mov goomba3Active, 1
+mov goomba3Dir, 1
+
+mov bossActive, 0
+
+mov al, level
+cmp al, 4
+je skipKoopaRestart
+mov koopaX, 70
+mov koopaY, GROUND_LEVEL
+mov koopaActive, 1
+mov koopaShell, 0
+mov koopaDir, -1
+skipKoopaRestart:
+pop esi
+pop ecx
+pop eax
+
+ret
+
+exitGame :
+ret
+ShowGameOver ENDP
+
+HandleInput PROC
+pushad
+
+xor bl, bl
+xor bh, bh
+
+inputLoop :
+call ReadKey
+jz applyMovement
+
+mov bh, al
+
+test al, al
+jne checkAscii
+cmp ah, 4Bh
+je markLeft
+cmp ah, 4Dh
+je markRight
+cmp ah, 48h
+je markJump
+cmp ah, 1
+je checkPause
+jmp inputLoop
+
+checkAscii :
+mov cl, bh
+cmp cl, 'A'
+jb asciiReady
+cmp cl, 'Z'
+ja asciiReady
+or cl, 20h
+asciiReady :
+cmp cl, 'x'
+je exitGame
+cmp cl, 'a'
+je markLeft
+cmp cl, 'd'
+je markRight
+cmp cl, 'w'
+je markJump
+cmp cl, ' '
+je markDoubleJump
+cmp cl, 27
+je checkPause
+jmp inputLoop
+
+checkPause :
+call ShowPauseScreen
+jmp inputLoop
+
+markLeft :
+or bl, 1
+jmp inputLoop
+
+markRight :
+or bl, 2
+jmp inputLoop
+
+markJump :
+or bl, 4
+jmp inputLoop
+
+markDoubleJump :
+or bl, 8
+jmp inputLoop
+
+exitGame :
+mov gameActive, 0
+jmp inputLoop
+
+applyMovement :
+test bl, 1
+jz noLeft
+mov al, marioX
+sub al, 2
+cmp al, 2
+jge leftOk
+mov al, 2
+leftOk:
+mov marioX, al
+noLeft :
+
+test bl, 2
+jz noRight
+mov al, marioX
+add al, 2
+cmp al, SCREEN_WIDTH - 3
+jle rightOk
+mov al, SCREEN_WIDTH - 3
+rightOk:
+mov marioX, al
+noRight :
+
+test bl, 4
+jz noJump
+cmp isJumping, 1
+je noJump
+
+mov isJumping, 1
+mov jumpCount, 1
+mov canDoubleJump, 1
+
+; Play jump sound
+push eax
+push ebx
+mov eax, SOUND_JUMP
+mov ebx, DURATION_SHORT
+call PlaySound
+pop ebx
+pop eax
+
+cmp hasSpringPower, 1
+jne normalJump
+mov al, HIGH_JUMP_STRENGTH
+neg al
+mov marioVelocityY, al
+jmp noJump
+normalJump :
+mov al, JUMP_STRENGTH
+neg al
+mov marioVelocityY, al
+noJump :
+
+test bl, 8
+jz noDoubleJump
+cmp isJumping, 1
+jne noDoubleJump
+cmp canDoubleJump, 1
+jne noDoubleJump
+cmp jumpCount, 1
+jne noDoubleJump
+
+mov canDoubleJump, 0
+mov jumpCount, 2
+
+; Play double jump sound (higher pitch)
+push eax
+push ebx
+mov eax, SOUND_JUMP
+add eax, 200            ; Higher pitch for double jump
+mov ebx, DURATION_SHORT
+call PlaySound
+pop ebx
+pop eax
+
+mov al, JUMP_STRENGTH
+neg al
+mov marioVelocityY, al
+noDoubleJump :
+
+popad
+ret
+HandleInput ENDP
+
+ShowPauseScreen PROC
+    pushad
+    mov eax, black + (white * 16)
+    call SetTextColor
+    mWriteString 40, 10, strPaused
+    mWriteString 32, 12, strPauseInstruction
+
+pauseLoop:
+    call ReadKey
+    jz pauseLoop
+    cmp al, 27
+    je pauseEnd
+    cmp ah, 1
+    je pauseEnd
+    mov cl, al
+    cmp cl, 'A'
+    jb checkX
+    cmp cl, 'Z'
+    ja checkX
+    or cl, 20h
+checkX:
+    cmp cl, 'x'
+    je exitFromPause
+    jmp pauseLoop
+
+exitFromPause:
+    mov gameActive, 0
+pauseEnd:
+    popad
+    ret
+ShowPauseScreen ENDP
+END main

@@ -1,2 +1,30 @@
-Name: m, Score: 1600, Level: 1
-Name: muhammad, Score: 6000, Level: 2
+Name: ok, Score: 400, Level: 1
+Name: pppl, Score: 600, Level: 4
+Name: oskep, Score: 6600, Level: 4
+Name: aoke, Score: 10600, Level: 4
+Name: saeiuewkj, Score: 800, Level: 4
+Name: palel, Score: 4200, Level: 4
+Name: apswww, Score: 8500, Level: 4
+Name: Kus kA Dhakkan, Score: 9000, Level: 4
+Name: ik, Score: 6300, Level: 1
+Name: ddv, Score: 11000, Level: 4
+Name: okaa;s, Score: 5100, Level: 1
+Name: Usman, Score: 11900, Level: 4
+Name: ds, Score: 2300, Level: 1
+Name: mds, Score: 11500, Level: 4
+Name: Muhammad, Score: 18100, Level: 4
+Name: Ok, Score: 17200, Level: 4
+Name: ss, Score: 0, Level: 1
+Name: a, Score: 0, Level: 4
+Name: Oka, Score: 1400, Level: 1
+Name: s, Score: 400, Level: 1
+Name: ds, Score: 500, Level: 1
+Name: ddf, Score: 0, Level: 1
+Name: ds, Score: 1000, Level: 1
+Name: dfsd, Score: 37250, Level: 4
+Name: dfsdf, Score: 10800, Level: 4
+Name: sao, Score: 23500, Level: 4
+Name: dadsa, Score: 200, Level: 4
+Name: dsfds, Score: 200, Level: 4
+Name: ads, Score: 3705
+Name: omar, Score: 10600, Level: 4

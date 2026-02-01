@@ -3,7 +3,4 @@
   <ItemGroup>
     <MASM Include="Source.asm" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="ending.txt" />
-  </ItemGroup>
 </Project>

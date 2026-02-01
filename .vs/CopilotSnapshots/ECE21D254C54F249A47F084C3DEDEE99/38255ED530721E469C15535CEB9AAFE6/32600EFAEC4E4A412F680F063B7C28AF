@@ -1,0 +1,156 @@
+﻿# Level 4 Boss Level Implementation
+
+## Overview
+Level 4 is a comprehensive boss battle level with a **RED BACKGROUND** theme, featuring complex platforming and a challenging boss fight.
+
+## Key Features
+
+### 1. **Red Background**
+- Entire level uses `BOSS_ATTR = white + (red * 16)` for a distinct boss atmosphere
+- UI, backgrounds, and all elements adapt to the red color scheme on Level 4
+
+### 2. **Boss Mechanics**
+
+#### Boss Properties:
+- **Health**: 5 HP
+- **Position**: Starts at X=100, Y=GROUND_LEVEL
+- **Movement**: Patrols horizontally between X=70 and X=115
+- **Size**: Multi-character boss (BB^ pattern) for larger appearance
+
+#### Boss Behavior:
+- **Phase 1** (HP > 3): Normal attack speed
+- **Phase 2** (HP ? 3): Enraged mode with 2x faster projectile attacks
+- **Vulnerable State**: Flashes yellow for 20 frames after being hit
+- **Stun Mechanic**: Cannot damage Mario during stun period
+
+### 3. **Combat System**
+
+#### Attacking the Boss:
+- Jump on the boss's head (from above while falling)
+- Boss takes 1 damage and becomes vulnerable
+- Mario bounces upward automatically
+- Each hit awards 1000 points
+
+#### Boss Attacks:
+- Fires projectiles (*) toward Mario
+- Projectiles move at 2 units/frame horizontally
+- Up to 3 active projectiles simultaneously
+- Attack cooldown: 30 frames (15 frames in Phase 2)
+
+#### Collision Types:
+- **Jump on head**: Damage boss, bounce Mario
+- **Side collision**: Mario takes damage if boss not stunned
+- **Projectile hit**: Mario dies
+
+### 4. **Complex Level Layout**
+
+#### Platforms (6 total):
+- Platform 1: X=5, Y=GROUND_LEVEL-8, Width=8
+- Platform 2: X=25, Y=GROUND_LEVEL-12, Width=12
+- Platform 3: X=50, Y=GROUND_LEVEL-10, Width=10
+- Platform 4: X=35, Y=GROUND_LEVEL-15, Width=8
+- Platform 5: X=70, Y=GROUND_LEVEL-7, Width=15
+- Platform 6: X=90, Y=GROUND_LEVEL-13, Width=10
+
+#### Walls (3 total):
+- Wall 1: X=18, Top=GROUND_LEVEL-10, Bottom=GROUND_LEVEL-3
+- Wall 2: X=45, Top=GROUND_LEVEL-12, Bottom=GROUND_LEVEL-5
+- Wall 3: X=82, Top=GROUND_LEVEL-8, Bottom=GROUND_LEVEL-2
+
+#### Coins (15 total):
+- Strategically placed at varying heights (Y: -2 to -13)
+- Distributed across the level for player navigation challenges
+- Positioned to encourage vertical platforming
+
+### 5. **Level Progression**
+
+#### Entry:
+1. Boss warning screen: "*** BOSS BATTLE ***"
+2. Red background activates
+3. Timer extended to 600 seconds
+4. No regular enemies (Goombas disabled)
+5. Spring mushroom disabled
+
+#### Victory Conditions:
+- Defeat boss (reduce HP to 0)
+- Bonus: 5000 points upon victory
+- Shows "BOSS DEFEATED!" screen
+- Completes the game with "ALL LEVELS COMPLETE!" message
+
+#### Boss Health Display:
+- Shows "BOSS HP: X" in top-right UI
+- Only visible when boss is active
+
+### 6. **Visual Features**
+
+#### Boss Appearance:
+- Red color (red + red*16) normally
+- Yellow flash (yellow + red*16) when vulnerable
+- Multi-character sprite: "BB^" pattern
+
+#### Projectiles:
+- Character: '*'
+- Color: Red on red background
+- Visible trajectory
+
+#### Background:
+- All UI elements use red background
+- Ground, platforms, walls maintain visibility
+- Clouds still render
+
+### 7. **Audio/Timing**
+- Phase 2 warning: "BOSS ENRAGED!" message
+- 800ms flash/delay on phase transition
+- Existing sound system compatible
+
+## Technical Implementation
+
+### New Variables:
+```asm
+bossX, bossY: Position
+bossHealth: HP counter (0-5)
+bossActive: Battle state flag
+bossDir: Movement direction
+bossAttackTimer, bossAttackCooldown: Attack timing
+bossVulnerable, bossStunTimer: Damage state
+bossPhase: Current phase (1 or 2)
+
+projectileX[3], projectileY[3]: Projectile positions
+projectileActive[3]: Active state
+projectileDir[3]: Movement direction
+```
+
+### New Procedures:
+- `UpdateBoss`: AI and movement logic
+- `BossFireProjectile`: Projectile spawning
+- `UpdateProjectiles`: Projectile physics
+- `DrawBoss`: Boss rendering
+- `DrawProjectiles`: Projectile rendering
+- `CheckBossCollisions`: Boss combat collision detection
+- `CheckProjectileCollisions`: Projectile hit detection
+- `ShowBossWarning`: Pre-battle warning screen
+- `ShowBossDefeated`: Victory screen
+- `ShowPhase2Warning`: Phase transition notification
+
+## Gameplay Tips
+
+1. **Master Platform Navigation**: Use the complex platform layout to dodge projectiles
+2. **Time Your Jumps**: Only attack boss when falling to avoid side collisions
+3. **Phase 2 Strategy**: Boss becomes more aggressive at 3 HP or less
+4. **Use Walls**: Hide behind walls to avoid projectiles
+5. **Collect Coins**: Strategically placed to guide safe paths
+
+## Difficulty Scaling
+- Level 1-3: Standard platforming with coins and enemies
+- **Level 4**: Boss battle with projectile dodging, precise jumping, and pattern recognition
+
+## Victory
+Upon defeating the boss:
+- 5000 bonus points awarded
+- Game completion achieved
+- Score saved to file
+- Returns to main menu or exits
+
+---
+**Completion Status**: Fully implemented and tested
+**Build Status**: ? Successful compilation

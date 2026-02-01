@@ -5,6 +5,21 @@
     {
       "AbsoluteMoniker": "D:0:0:{2A54E1E3-E1B5-45D9-AD13-C8D8193B2C7E}|Project1.vcxproj|C:\\Users\\MUSTAFA\\Desktop\\Coal Project\\Project1\\Source.asm||{8B382828-6202-11D1-8870-0000F87579D2}|",
       "RelativeMoniker": "D:0:0:{2A54E1E3-E1B5-45D9-AD13-C8D8193B2C7E}|Project1.vcxproj|solutionrelative:Source.asm||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-2ced07c4-f5b9-4cfc-ba98-ae7eb14524b6.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-442076dd-b6fb-45c4-b0fb-acd45a89f336.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-52661db7-410c-478b-86e6-be6251a2c948.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-b78bf94e-60cb-4be1-9ea4-fefe7bcb71c1.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-e6821425-73ac-4424-8cf3-d01f9f9c551e.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,15 +29,20 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 3,
           "Children": [
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "plan-442076dd-b6fb-45c4-b0fb-acd45a89f336.md",
+              "DocumentMoniker": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-442076dd-b6fb-45c4-b0fb-acd45a89f336.md",
+              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-442076dd-b6fb-45c4-b0fb-acd45a89f336.md",
+              "ToolTip": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-442076dd-b6fb-45c4-b0fb-acd45a89f336.md",
+              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-442076dd-b6fb-45c4-b0fb-acd45a89f336.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-12-06T20:15:14.157Z",
+              "IsPinned": true
             },
             {
               "$type": "Bookmark",
@@ -30,7 +50,7 @@
             },
             {
               "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
               "$type": "Document",
@@ -40,10 +60,58 @@
               "RelativeDocumentMoniker": "Source.asm",
               "ToolTip": "C:\\Users\\MUSTAFA\\Desktop\\Coal Project\\Project1\\Source.asm",
               "RelativeToolTip": "Source.asm",
-              "ViewState": "AgIAAD4GAAAAAAAAAAAswEwGAAALAAAAAAAAAA==",
+              "ViewState": "AgIAAEoEAAAAAAAAAAAYwBkCAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2025-11-14T12:27:27.52Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "plan-2ced07c4-f5b9-4cfc-ba98-ae7eb14524b6.md",
+              "DocumentMoniker": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-2ced07c4-f5b9-4cfc-ba98-ae7eb14524b6.md",
+              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-2ced07c4-f5b9-4cfc-ba98-ae7eb14524b6.md",
+              "ToolTip": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-2ced07c4-f5b9-4cfc-ba98-ae7eb14524b6.md",
+              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-2ced07c4-f5b9-4cfc-ba98-ae7eb14524b6.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-12-07T12:15:34.036Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "plan-52661db7-410c-478b-86e6-be6251a2c948.md",
+              "DocumentMoniker": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-52661db7-410c-478b-86e6-be6251a2c948.md",
+              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-52661db7-410c-478b-86e6-be6251a2c948.md",
+              "ToolTip": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-52661db7-410c-478b-86e6-be6251a2c948.md",
+              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-52661db7-410c-478b-86e6-be6251a2c948.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-28T20:27:34.875Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "plan-b78bf94e-60cb-4be1-9ea4-fefe7bcb71c1.md",
+              "DocumentMoniker": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-b78bf94e-60cb-4be1-9ea4-fefe7bcb71c1.md",
+              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-b78bf94e-60cb-4be1-9ea4-fefe7bcb71c1.md",
+              "ToolTip": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-b78bf94e-60cb-4be1-9ea4-fefe7bcb71c1.md",
+              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-b78bf94e-60cb-4be1-9ea4-fefe7bcb71c1.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-28T20:15:29.749Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "plan-e6821425-73ac-4424-8cf3-d01f9f9c551e.md",
+              "DocumentMoniker": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-e6821425-73ac-4424-8cf3-d01f9f9c551e.md",
+              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-e6821425-73ac-4424-8cf3-d01f9f9c551e.md",
+              "ToolTip": "C:\\Users\\MUSTAFA\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-e6821425-73ac-4424-8cf3-d01f9f9c551e.md",
+              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-e6821425-73ac-4424-8cf3-d01f9f9c551e.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-28T18:57:30.083Z"
             }
           ]
         }

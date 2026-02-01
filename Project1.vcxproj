@@ -21,9 +21,6 @@
   <ItemGroup>
     <MASM Include="Source.asm" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="ending.txt" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

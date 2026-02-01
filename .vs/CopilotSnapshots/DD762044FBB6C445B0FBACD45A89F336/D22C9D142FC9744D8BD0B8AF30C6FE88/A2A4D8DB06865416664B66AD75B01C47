@@ -1,0 +1,137 @@
+﻿# Level 1 Background Art Enhancement
+
+## Summary
+Added beautiful background scenery for Level 1 with **hills, mountains, and bushes** that differ between Screen 1 and Screen 2, creating visual variety and depth.
+
+---
+
+## New Background Elements
+
+### **Screen 1 (Level 1-1) - Rolling Hills Theme**
+- **3 Rolling Hills**: Positioned at different heights creating depth
+  - Small hill at x=15 (height 3)
+  - Large hill at x=50 (height 4)  
+  - Medium hill at x=85 (height 3)
+- **4 Bushes**: Ground-level decorations at x=5, 40, 65, 100
+- **5 Clouds**: (already existing) at various heights
+
+**Visual Style**: Gentle, welcoming landscape with green hills
+
+### **Screen 2 (Level 1-2) - Mountain Peaks Theme**
+- **2 Tall Mountains**: Dramatic peaks in the background
+  - Left mountain at x=25 (height 8)
+  - Right mountain at x=80 (height 7)
+- **5 Bushes**: More bushes for variety at x=8, 30, 48, 75, 105
+- **5 Clouds**: Same cloud system
+
+**Visual Style**: More dramatic with taller peaks, challenging atmosphere
+
+---
+
+## Technical Implementation
+
+### **Data Structures Added**
+
+```assembly
+; SCREEN 1 DATA
+hillCount_S1 = 3
+hillX_S1 BYTE 15, 50, 85
+hillY_S1 BYTE GROUND_LEVEL - 3, GROUND_LEVEL - 4, GROUND_LEVEL - 3
+hillWidth_S1 BYTE 12, 15, 10
+
+bushCount_S1 = 4
+bushX_S1 BYTE 5, 40, 65, 100
+bushY_S1 BYTE GROUND_LEVEL - 1, GROUND_LEVEL - 1, ...
+
+; SCREEN 2 DATA
+mountainCount_S2 = 2
+mountainX_S2 BYTE 25, 80
+mountainY_S2 BYTE GROUND_LEVEL - 8, GROUND_LEVEL - 7
+
+bushCount_S2 = 5
+bushX_S2 BYTE 8, 30, 48, 75, 105
+```
+
+### **New Procedure: `DrawHills`**
+
+```assembly
+DrawHills PROC
+    ; Check level (only Level 1 has background art)
+    ; Check screen version (1 or 2)
+    ; Draw appropriate scenery:
+    ;   - Screen 1: Rolling hills with /\_ shapes
+    ;   - Screen 2: Tall mountains with ^ peaks
+    ; Draw bushes: (w) symbols
+    ; Use green color for hills/bushes
+    ; Use light gray for mountains
+DrawHills ENDP
+```
+
+---
+
+## Color Scheme
+
+| Element | Color Combination |
+|---------|-------------------|
+| **Hills (Screen 1)** | Green + Light Blue background |
+| **Mountains (Screen 2)** | Light Gray + Light Blue background |
+| **Bushes** | Green + Light Blue background |
+| **Clouds** | Default (white + light blue) |
+
+---
+
+## Visual Representation
+
+### **Screen 1 Layout:**
+```
+     o-o    o-o         o-o       o-o    o-o
+                /\              /\
+               /  \            /  \      
+              /____\          /____\     /\
+(w)                  (w)         (w)       (w)
+________________________________________________________
+```
+
+### **Screen 2 Layout:**
+```
+     o-o    o-o         o-o       o-o    o-o
+        ^                             ^
+       / \                           / \
+      /   \                         /   \
+     /     \                       /     \
+(w)    (w)      (w)       (w)              (w)
+________________________________________________________
+```
+
+---
+
+## Drawing Order (from back to front)
+
+1. **Clear screen** (background color)
+2. **Draw clouds** (far background)
+3. **Draw hills/mountains** (mid background) ⭐ NEW
+4. **Draw platforms & walls** (structures)
+5. **Draw coins, power-ups** (collectibles)
+6. **Draw enemies & boss** (characters)
+7. **Draw Mario** (player - foreground)
+8. **Draw UI** (always on top)
+
+---
+
+## Benefits
+
+✅ **Visual Depth**: Layered scenery creates 3D illusion  
+✅ **Screen Variety**: Different art for Screen 1 vs Screen 2  
+✅ **Professional Look**: More polished, complete game feel  
+✅ **Level Identity**: Level 1 has distinct "outdoor grassland" theme  
+✅ **Performance**: Simple ASCII art, no slowdown  
+
+---
+
+## Usage
+
+The background art **automatically renders** based on:
+- **Level**: Only appears in Level 1
+- **Screen**: Different art for `screenVersion = 1` vs `screenVersion = 2`
+
+No player interaction needed—purely decorative! 🎨🏔️🌳
