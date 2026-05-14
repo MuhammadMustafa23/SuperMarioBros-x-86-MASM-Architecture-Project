@@ -43,6 +43,12 @@ Gameplay Mechanics
 - Collect power-ups for special abilities
 - Enter bonus rooms for extra coins
 
+ ![Main Menu](SuperMarioBros/main.png)
+ ![Gameplay](SuperMarioBros/game.png)
+ ![Castle Bonus](SuperMarioBros/castlebonus.png)
+ ![Level Complete Screen](SuperMarioBros/level.png)
+ ![Finish Screen](SuperMarioBros/end.png)
+
 Technical Details
 
 - Language: x86 Assembly
